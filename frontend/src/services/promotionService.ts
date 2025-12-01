@@ -1,0 +1,47 @@
+import api from './api';
+import { PromotionRequest, PromotionRequestData, ApiResponse } from '@/types';
+
+export const promotionService = {
+  createPromotionRequest: async (data: PromotionRequestData): Promise<PromotionRequest> => {
+    const response = await api.post<ApiResponse<PromotionRequest>>('/promotion-requests', data);
+    return response.data.data;
+  },
+
+  updatePromotionRequest: async (id: number, data: PromotionRequestData): Promise<PromotionRequest> => {
+    const response = await api.put<ApiResponse<PromotionRequest>>(`/promotion-requests/${id}`, data);
+    return response.data.data;
+  },
+
+  deletePromotionRequest: async (id: number): Promise<void> => {
+    await api.delete(`/promotion-requests/${id}`);
+  },
+
+  updateStatus: async (id: number, status: string, comment?: string): Promise<PromotionRequest> => {
+    let url = `/promotion-requests/${id}/status?status=${status}`;
+    if (comment) {
+      url += `&comment=${encodeURIComponent(comment)}`;
+    }
+    const response = await api.put<ApiResponse<PromotionRequest>>(url);
+    return response.data.data;
+  },
+
+  getPromotionRequestsByEmployeeId: async (employeeId: number): Promise<PromotionRequest[]> => {
+    const response = await api.get<ApiResponse<PromotionRequest[]>>(`/promotion-requests/employee/${employeeId}`);
+    return response.data.data;
+  },
+
+  getPromotionRequestsByStatus: async (status: string): Promise<PromotionRequest[]> => {
+    const response = await api.get<ApiResponse<PromotionRequest[]>>(`/promotion-requests/status/${status}`);
+    return response.data.data;
+  },
+
+  getAllPromotionRequests: async (): Promise<PromotionRequest[]> => {
+    const response = await api.get<ApiResponse<PromotionRequest[]>>('/promotion-requests');
+    return response.data.data;
+  },
+
+  getPromotionRequestById: async (id: number): Promise<PromotionRequest> => {
+    const response = await api.get<ApiResponse<PromotionRequest>>(`/promotion-requests/${id}`);
+    return response.data.data;
+  },
+};
