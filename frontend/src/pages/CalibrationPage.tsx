@@ -334,28 +334,36 @@ const CalibrationPage = () => {
   };
 
   const handleApprovePromotion = async (promotionRequestId: number) => {
+    const comment = prompt('Введите комментарий (необязательно):');
     try {
-      await promotionService.updateStatus(promotionRequestId, 'approved');
-      alert('Promotion request approved successfully');
+      await promotionService.approveOrRejectPromotion(promotionRequestId, 'approved', comment || undefined);
+      alert('Повышение одобрено! Новый грейд присвоен сотруднику.');
       if (selectedCalibration) {
         handleViewRanking(selectedCalibration);
       }
+      fetchData();
     } catch (error: any) {
       console.error('Failed to approve promotion:', error);
-      alert(error.response?.data?.message || 'Failed to approve promotion');
+      alert(error.response?.data?.message || 'Ошибка при одобрении повышения');
     }
   };
 
   const handleRejectPromotion = async (promotionRequestId: number) => {
+    const comment = prompt('Введите причину отклонения:');
+    if (!comment || comment.trim() === '') {
+      alert('Необходимо указать причину отклонения');
+      return;
+    }
     try {
-      await promotionService.updateStatus(promotionRequestId, 'rejected');
-      alert('Promotion request rejected');
+      await promotionService.approveOrRejectPromotion(promotionRequestId, 'rejected', comment);
+      alert('Повышение отклонено');
       if (selectedCalibration) {
         handleViewRanking(selectedCalibration);
       }
+      fetchData();
     } catch (error: any) {
       console.error('Failed to reject promotion:', error);
-      alert(error.response?.data?.message || 'Failed to reject promotion');
+      alert(error.response?.data?.message || 'Ошибка при отклонении повышения');
     }
   };
 

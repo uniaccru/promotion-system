@@ -44,4 +44,12 @@ export const promotionService = {
     const response = await api.get<ApiResponse<PromotionRequest>>(`/promotion-requests/${id}`);
     return response.data.data;
   },
+
+  approveOrRejectPromotion: async (id: number, decision: 'approved' | 'rejected', comment?: string): Promise<PromotionRequest> => {
+    const response = await api.post<ApiResponse<PromotionRequest>>(`/promotion-requests/${id}/decision`, {
+      decision,
+      comment,
+    });
+    return response.data.data;
+  },
 };
