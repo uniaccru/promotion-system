@@ -24,7 +24,7 @@ public class PromotionRequestIntegrationTest extends BaseIntegrationTest {
         request.setEmployeeId(testEmployee.getId());
         request.setRequestedGradeId(testGrade2.getId());
         request.setJustification("I have completed all goals and demonstrated strong performance");
-        request.setEvidence("https:
+        request.setEvidence("https://example.com/evidence");
         request.setReviewPeriod("2024-H1");
 
         String token = getAuthHeader("testuser");
@@ -38,7 +38,7 @@ public class PromotionRequestIntegrationTest extends BaseIntegrationTest {
                 .andExpect(jsonPath("$.data.employeeId").value(testEmployee.getId()))
                 .andExpect(jsonPath("$.data.requestedGradeId").value(testGrade2.getId()))
                 .andExpect(jsonPath("$.data.justification").value("I have completed all goals and demonstrated strong performance"))
-                .andExpect(jsonPath("$.data.evidence").value("https:
+                .andExpect(jsonPath("$.data.evidence").value("https://example.com/evidence"))
                 .andExpect(jsonPath("$.data.status").value("pending"));
     }
 
@@ -51,7 +51,7 @@ public class PromotionRequestIntegrationTest extends BaseIntegrationTest {
         request.setEmployeeId(testTeamLeadEmployee.getId());
         request.setRequestedGradeId(testGrade3.getId());
         request.setJustification("Team lead justification");
-        request.setEvidence("https:
+        request.setEvidence("https://example.com/evidence");
         request.setReviewPeriod("2024-H1");
 
         String token = getAuthHeader("teamlead");
