@@ -4,9 +4,11 @@ import com.grading.dto.request.PromotionRequestRequest;
 import com.grading.dto.response.PromotionRequestResponse;
 import com.grading.entity.Employee;
 import com.grading.entity.Grade;
+import com.grading.entity.GradeHistory;
 import com.grading.entity.PromotionRequest;
 import com.grading.repository.EmployeeRepository;
 import com.grading.repository.GradeRepository;
+import com.grading.repository.GradeHistoryRepository;
 import com.grading.repository.PromotionRequestRepository;
 import com.grading.service.PromotionRequestService;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +25,7 @@ public class PromotionRequestServiceImpl implements PromotionRequestService {
     private final PromotionRequestRepository promotionRequestRepository;
     private final EmployeeRepository employeeRepository;
     private final GradeRepository gradeRepository;
+    private final GradeHistoryRepository gradeHistoryRepository;
 
     @Override
     @Transactional
@@ -90,6 +93,53 @@ public class PromotionRequestServiceImpl implements PromotionRequestService {
         
         if ("returned_for_revision".equalsIgnoreCase(status) && comment != null) {
             promotionRequest.setHrComment(comment);
+        }
+
+        PromotionRequest saved = promotionRequestRepository.save(promotionRequest);
+        return toPromotionRequestResponse(saved);
+    }
+
+    @Override
+    @Transactional
+    public PromotionRequestResponse approveOrRejectPromotion(Long id, String decision, String comment, Long approvedById) {
+        PromotionRequest promotionRequest = promotionRequestRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Promotion request not found"));
+        
+        Employee approvedBy = employeeRepository.findById(approvedById)
+            .orElseThrow(() -> new RuntimeException("Approver not found"));
+
+        // Проверяем, что заявка находится в статусе calibration_completed
+        if (!"calibration_completed".equalsIgnoreCase(promotionRequest.getStatus())) {
+            throw new RuntimeException("Promotion request must be in 'calibration_completed' status to approve or reject");
+        }
+
+        if ("approved".equalsIgnoreCase(decision)) {
+            // Одобряем повышение
+            promotionRequest.setStatus("approved");
+            promotionRequest.setStatusChangedBy(approvedBy);
+            promotionRequest.setHrComment(comment);
+            
+            // Создаем запись в grade_history
+            GradeHistory currentGradeHistory = gradeHistoryRepository.findTopByEmployeeIdOrderByChangedAtDesc(
+                promotionRequest.getEmployee().getId()
+            ).orElse(null);
+            
+            GradeHistory gradeHistory = new GradeHistory();
+            gradeHistory.setEmployee(promotionRequest.getEmployee());
+            gradeHistory.setOldGrade(currentGradeHistory != null ? currentGradeHistory.getNewGrade() : null);
+            gradeHistory.setNewGrade(promotionRequest.getRequestedGrade());
+            gradeHistory.setChangedBy(approvedBy);
+            gradeHistory.setReason("Promotion request approved: " + id);
+            
+            gradeHistoryRepository.save(gradeHistory);
+            
+        } else if ("rejected".equalsIgnoreCase(decision)) {
+            // Отклоняем повышение
+            promotionRequest.setStatus("rejected");
+            promotionRequest.setStatusChangedBy(approvedBy);
+            promotionRequest.setHrComment(comment != null ? comment : "Rejected");
+        } else {
+            throw new RuntimeException("Invalid decision. Must be 'approved' or 'rejected'");
         }
 
         PromotionRequest saved = promotionRequestRepository.save(promotionRequest);

@@ -9,6 +9,7 @@ public interface PromotionRequestService {
     PromotionRequestResponse createPromotionRequest(PromotionRequestRequest request, Long submittedById);
     PromotionRequestResponse updatePromotionRequest(Long id, PromotionRequestRequest request);
     PromotionRequestResponse updatePromotionRequestStatus(Long id, String status, Long changedById, String comment);
+    PromotionRequestResponse approveOrRejectPromotion(Long id, String decision, String comment, Long approvedById);
     void deletePromotionRequest(Long id);
     PromotionRequestResponse getPromotionRequestById(Long id);
     List<PromotionRequestResponse> getPromotionRequestsByEmployeeId(Long employeeId);

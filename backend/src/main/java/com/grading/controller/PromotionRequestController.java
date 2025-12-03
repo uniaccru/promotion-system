@@ -1,5 +1,6 @@
 package com.grading.controller;
 
+import com.grading.dto.request.ApprovePromotionRequest;
 import com.grading.dto.request.PromotionRequestRequest;
 import com.grading.dto.response.ApiResponse;
 import com.grading.dto.response.PromotionRequestResponse;
@@ -211,6 +212,36 @@ public class PromotionRequestController {
         
         List<PromotionRequestResponse> promotionRequests = promotionRequestService.getPromotionRequestsByStatus(status);
         return ResponseEntity.ok(ApiResponse.success(promotionRequests));
+    }
+
+    @PostMapping("/{id}/decision")
+    @Operation(
+        summary = "Одобрить или отклонить повышение",
+        description = "Одобряет или отклоняет заявку на повышение после калибровки. При одобрении автоматически присваивается новый грейд (только HR)"
+    )
+    public ResponseEntity<ApiResponse<PromotionRequestResponse>> approveOrRejectPromotion(
+            @PathVariable Long id,
+            @Valid @RequestBody ApprovePromotionRequest request,
+            Authentication authentication) {
+        Employee currentEmployee = getCurrentEmployee(authentication);
+        
+        if (!"hr".equalsIgnoreCase(currentEmployee.getRole())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ApiResponse.error("Only HR can approve or reject promotion requests"));
+        }
+        
+        PromotionRequestResponse promotionRequest = promotionRequestService.approveOrRejectPromotion(
+            id, 
+            request.getDecision(), 
+            request.getComment(), 
+            currentEmployee.getId()
+        );
+        
+        String message = "approved".equalsIgnoreCase(request.getDecision()) 
+            ? "Promotion request approved successfully. New grade assigned." 
+            : "Promotion request rejected successfully.";
+        
+        return ResponseEntity.ok(ApiResponse.success(message, promotionRequest));
     }
 
     private Employee getCurrentEmployee(Authentication authentication) {

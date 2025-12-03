@@ -13,6 +13,8 @@ import java.util.Optional;
 public interface GradeHistoryRepository extends JpaRepository<GradeHistory, Long> {
     List<GradeHistory> findByEmployeeIdOrderByChangedAtDesc(Long employeeId);
     
+    Optional<GradeHistory> findTopByEmployeeIdOrderByChangedAtDesc(Long employeeId);
+    
     @Query("SELECT gh FROM GradeHistory gh WHERE gh.employee.id = :employeeId ORDER BY gh.changedAt DESC LIMIT 1")
     Optional<GradeHistory> findLatestByEmployeeId(@Param("employeeId") Long employeeId);
 }
