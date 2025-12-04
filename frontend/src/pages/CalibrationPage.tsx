@@ -324,6 +324,15 @@ const CalibrationPage = () => {
       }
       
       const data = await calibrationService.getCandidateRanking(calibration.id);
+      console.log('=== RANKING DATA DEBUG ===');
+      console.log('Full ranking data:', JSON.stringify(data, null, 2));
+      console.log('User role:', userRole);
+      console.log('isHR:', isHR);
+      console.log('Rankings array:', data.rankings);
+      data.rankings.forEach((candidate, idx) => {
+        console.log(`Candidate ${idx}: status="${candidate.currentStatus}", prId=${candidate.promotionRequestId}`);
+      });
+      console.log('=== END DEBUG ===');
       setRanking(data);
       setSelectedCalibration(calibration);
       setOpenRankingDialog(true);

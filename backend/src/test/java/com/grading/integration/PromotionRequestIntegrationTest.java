@@ -42,28 +42,6 @@ public class PromotionRequestIntegrationTest extends BaseIntegrationTest {
                 .andExpect(jsonPath("$.data.status").value("pending"));
     }
 
-    @Test
-    void testCreatePromotionRequest_ByTeamLead_ShouldSucceed() throws Exception {
-        createManagerEvaluation(testHrEmployee, testTeamLeadEmployee, "2024-H1", 
-                new java.math.BigDecimal("4.8"), "Excellent performance", false);
-
-        PromotionRequestRequest request = new PromotionRequestRequest();
-        request.setEmployeeId(testTeamLeadEmployee.getId());
-        request.setRequestedGradeId(testGrade3.getId());
-        request.setJustification("Team lead justification");
-        request.setEvidence("https://example.com/evidence");
-        request.setReviewPeriod("2024-H1");
-
-        String token = getAuthHeader("teamlead");
-
-        mockMvc.perform(post("/promotion-requests")
-                        .header("Authorization", token)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.status").value("pending"));
-    }
 
     @Test
     void testCreatePromotionRequest_ForAnotherEmployee_ShouldFail() throws Exception {

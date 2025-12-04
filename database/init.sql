@@ -210,7 +210,7 @@ BEFORE UPDATE ON calibrations
 FOR EACH ROW EXECUTE FUNCTION check_calibration_candidates();
 
 -- Update promotion requests status when calibration is completed
-CREATE OR REPLACE FUNCTION update_promotion_requests_on_calibration_complete()
+CREATE OR REPLACE FUNCTION grading2.update_promotion_requests_on_calibration_complete()
 RETURNS TRIGGER AS $$
 BEGIN
     IF NEW.status = 'completed' AND OLD.status != 'completed' THEN
@@ -224,8 +224,8 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER trg_update_pr_on_calibration_complete
-AFTER UPDATE ON calibrations
-FOR EACH ROW EXECUTE FUNCTION update_promotion_requests_on_calibration_complete();
+AFTER UPDATE ON grading2.calibrations
+FOR EACH ROW EXECUTE FUNCTION grading2.update_promotion_requests_on_calibration_complete();
 
 -- Insert initial grades
 INSERT INTO grades (name, description) VALUES

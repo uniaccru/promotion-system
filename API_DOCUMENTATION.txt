@@ -1,0 +1,146 @@
+GRADING SYSTEM - API ДОКУМЕНТАЦИЯ
+==================================
+Базовый URL: http://localhost:8080/api
+Swagger UI: http://localhost:8080/swagger-ui/index.html
+
+
+
+1. АУТЕНТИФИКАЦИЯ
+=================
+POST /auth/login - Вход в систему
+  Body: { "username": "string", "password": "string" }
+  Response: { "token": "...", "username": "...", "role": "..." }
+
+POST /auth/register - Регистрация сотрудника
+  Headers: Authorization: Bearer <token> (если аутентифицирован - только HR)
+  Body: { "username", "password", "firstName", "lastName", "email", "role", "department", "position", "currentGradeId" }
+  Роли: hr, team_lead, employee
+
+
+2. СОТРУДНИКИ
+=============
+GET /employees - Все сотрудники
+GET /employees/{id} - Сотрудник по ID
+GET /employees/{id}/profile - Полный профиль с грейдом и историей
+GET /employees/department/{department} - Сотрудники по отделу
+
+
+3. ГРЕЙДЫ
+=========
+GET /grades - Все грейды
+GET /grades/{id} - Грейд по ID
+
+
+4. ШАБЛОНЫ ЦЕЛЕЙ
+================
+GET /goal-templates - Все шаблоны целей
+GET /goal-templates/{id} - Шаблон по ID
+GET /goal-templates/review-period/{period} - Шаблоны по периоду
+POST /goal-templates - Создать шаблон (HR only)
+  Body: { "name", "description", "reviewPeriod" }
+PUT /goal-templates/{id} - Обновить шаблон (HR only)
+DELETE /goal-templates/{id} - Удалить шаблон (HR only)
+
+
+5. НАЗНАЧЕННЫЕ ЦЕЛИ
+===================
+GET /goals/my-goals - Мои цели
+GET /goals/{id} - Цель по ID
+GET /goals/employee/{employeeId} - Цели сотрудника
+GET /goals/all - Все цели (HR only)
+POST /goals/assign - Назначить цель (HR only)
+  Body: { "employeeId", "goalId", "quarter" }
+PUT /goals/{id}/status - Обновить статус
+  Body: { "status": "not_started|in_progress|completed" }
+DELETE /goals/{id} - Удалить назначение (HR only)
+
+
+6. ОЦЕНКИ МЕНЕДЖЕРА
+===================
+GET /evaluations - Все оценки (HR only)
+GET /evaluations/{id} - Оценка по ID
+GET /evaluations/employee/{employeeId} - Оценки сотрудника
+GET /evaluations/review-period/{period} - Оценки по периоду (HR only)
+POST /evaluations - Создать оценку (HR only)
+  Body: { "employeeId", "score": 1-5, "comment", "reviewPeriod", "nominatedForPromotion": true/false }
+PUT /evaluations/{id} - Обновить оценку (HR only)
+
+
+7. ЗАЯВКИ НА ПОВЫШЕНИЕ
+======================
+GET /promotion-requests - Все заявки (HR only)
+GET /promotion-requests/{id} - Заявка по ID
+GET /promotion-requests/employee/{employeeId} - Заявки сотрудника
+GET /promotion-requests/status/{status} - Заявки по статусу (HR only)
+POST /promotion-requests - Создать заявку (employee/team_lead)
+  Body: { "employeeId", "targetGradeId", "justification", "evidence" }
+PUT /promotion-requests/{id} - Обновить заявку (только pending/returned_for_revision)
+DELETE /promotion-requests/{id} - Удалить заявку (только pending/returned_for_revision)
+PUT /promotion-requests/{id}/status?status=...&comment=... - Изменить статус (HR only)
+POST /promotion-requests/{id}/decision - Одобрить/отклонить (HR only)
+  Body: { "decision": "approved|rejected", "comment": "..." }
+
+Статусы заявок:
+  pending → under_review → ready_for_calibration → in_calibration → 
+  calibration_completed → approved/rejected
+  (или returned_for_revision)
+
+
+8. КАЛИБРОВКА
+=============
+GET /calibrations/{id} - Калибровка по ID
+GET /calibrations/{id}/details - Детали с evaluators и candidates
+GET /calibrations/{id}/ranking - Рейтинг кандидатов
+GET /calibrations/status/{status} - Калибровки по статусу
+GET /calibrations/grade/{gradeId} - Калибровки по грейду
+GET /calibrations/evaluator/{evaluatorId} - Калибровки для evaluator
+POST /calibrations?gradeId=... - Создать калибровку
+PUT /calibrations/{id}/status?status=... - Изменить статус (planning/active/completed)
+POST /calibrations/package - Создать пакет (HR only)
+  Body: { "gradeId", "promotionRequestIds": [...], "evaluatorIds": [...] }
+
+
+9. ПОПАРНЫЕ СРАВНЕНИЯ
+=====================
+GET /comparisons/calibration/{calibrationId} - Все сравнения калибровки
+GET /comparisons/calibration/{calibrationId}/pending - Ожидающие сравнения
+POST /comparisons - Создать сравнение (team_lead only)
+  Body: { "calibrationId", "candidate1Id", "candidate2Id", "winnerId", "comment" }
+
+
+АУТЕНТИФИКАЦИЯ
+==============
+Все эндпоинты (кроме /auth/login и /auth/register) требуют заголовок:
+  Authorization: Bearer <JWT_TOKEN>
+
+Получение токена:
+  1. POST /auth/login
+  2. Использовать token из ответа в заголовке Authorization
+
+
+РОЛИ
+====
+hr - HR менеджер (полный доступ)
+team_lead - Руководитель (evaluator в калибровке, создает сравнения)
+employee - Сотрудник (базовый доступ, свои цели/заявки)
+
+
+ПРИМЕРЫ
+=======
+# Логин
+curl -X POST http://localhost:8080/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"hr","password":"password"}'
+
+# Создать заявку на повышение
+curl -X POST http://localhost:8080/api/promotion-requests \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"employeeId":1,"targetGradeId":2,"justification":"...","evidence":"..."}'
+
+# Одобрить повышение
+curl -X POST http://localhost:8080/api/promotion-requests/1/decision \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"decision":"approved","comment":"..."}'
+

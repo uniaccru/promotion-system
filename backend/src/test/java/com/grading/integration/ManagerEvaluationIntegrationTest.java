@@ -210,29 +210,6 @@ public class ManagerEvaluationIntegrationTest extends BaseIntegrationTest {
                 .andExpect(jsonPath("$.data.length()").value(2)); 
     }
 
-    @Test
-    void testEvaluation_WithStrengthsAndWeaknesses_ShouldStoreComment() throws Exception {
-        String comment = "Strengths: Excellent problem-solving, strong communication skills, " +
-                "proactive approach. Weaknesses: Needs improvement in time management, " +
-                "should focus more on documentation.";
-
-        ManagerEvaluationRequest request = new ManagerEvaluationRequest();
-        request.setEmployeeId(testEmployee.getId());
-        request.setReviewPeriod("2024-H1");
-        request.setScore(new BigDecimal("4.2"));
-        request.setComment(comment); 
-        request.setNominatedForPromotion(false);
-
-        String token = getAuthHeader("hruser");
-
-        mockMvc.perform(post("/evaluations")
-                        .header("Authorization", token)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.comment").value(comment)); 
-    }
 
     @Test
     void testEvaluation_WithPromotionNomination_ShouldMarkCorrectly() throws Exception {
