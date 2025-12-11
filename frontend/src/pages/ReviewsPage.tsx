@@ -201,7 +201,7 @@ const ReviewsPage = () => {
   }
 
   return (
-    <Container maxWidth="lg">
+    <Container>
       {!user?.employeeId && (
         <Box sx={{ mb: 2 }}>
           <Alert severity="info">
@@ -209,8 +209,23 @@ const ReviewsPage = () => {
           </Alert>
         </Box>
       )}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4">Reviews History</Typography>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          mb: 3,
+          gap: 2,
+        }}
+      >
+        <Box>
+          <Typography variant="h4" sx={{ fontWeight: 700 }}>
+            Reviews History
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Track evaluations and promotion signals across the team
+          </Typography>
+        </Box>
         {isHR && (
           <Button variant="contained" startIcon={<Add />} onClick={handleOpenDialog}>
             Create Review
@@ -219,7 +234,14 @@ const ReviewsPage = () => {
       </Box>
 
       {isHR && (
-        <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            gap: 2,
+            mb: 3,
+            flexWrap: 'wrap',
+          }}
+        >
           <TextField
             label="Search by Employee Name"
             variant="outlined"
@@ -246,54 +268,58 @@ const ReviewsPage = () => {
         </Box>
       )}
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Review Period</TableCell>
-              <TableCell>Employee</TableCell>
-              <TableCell>Evaluator</TableCell>
-              <TableCell align="right">Score (out of 100)</TableCell>
-              <TableCell>Comment</TableCell>
-              <TableCell>Nominated for Promotion</TableCell>
-              <TableCell>Date</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {filteredReviews.length === 0 ? (
+      <Paper sx={{ overflow: 'hidden' }}>
+        <TableContainer>
+          <Table>
+            <TableHead>
               <TableRow>
-                <TableCell colSpan={7} align="center">
-                  {searchQuery || periodFilter ? 'No reviews match the filters.' : 'No reviews found.'}
-                </TableCell>
+                <TableCell>Review Period</TableCell>
+                <TableCell>Employee</TableCell>
+                <TableCell>Evaluator</TableCell>
+                <TableCell align="right">Score (out of 100)</TableCell>
+                <TableCell>Comment</TableCell>
+                <TableCell>Nominated for Promotion</TableCell>
+                <TableCell>Date</TableCell>
               </TableRow>
-            ) : (
-              filteredReviews.map((review) => (
-                <TableRow key={review.id}>
-                  <TableCell>{review.reviewPeriod}</TableCell>
-                  <TableCell>{review.employeeName || `Employee #${review.employeeId}`}</TableCell>
-                  <TableCell>{review.evaluatorName || `Evaluator #${review.evaluatorId}`}</TableCell>
-                  <TableCell align="right">
-                    <Chip 
-                      label={`${review.score}/100`} 
-                      color={getScoreColor(review.score)} 
-                      size="small" 
-                    />
+            </TableHead>
+            <TableBody>
+              {filteredReviews.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} align="center">
+                    {searchQuery || periodFilter ? 'No reviews match the filters.' : 'No reviews found.'}
                   </TableCell>
-                  <TableCell>{review.comment}</TableCell>
-                  <TableCell>
-                    <Chip 
-                      label={review.nominatedForPromotion ? 'Yes' : 'No'} 
-                      color={review.nominatedForPromotion ? 'success' : 'default'} 
-                      size="small" 
-                    />
-                  </TableCell>
-                  <TableCell>{format(new Date(review.createdAt), 'MMM dd, yyyy')}</TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+              ) : (
+                filteredReviews.map((review) => (
+                  <TableRow key={review.id} hover>
+                    <TableCell>{review.reviewPeriod}</TableCell>
+                    <TableCell>{review.employeeName || `Employee #${review.employeeId}`}</TableCell>
+                    <TableCell>{review.evaluatorName || `Evaluator #${review.evaluatorId}`}</TableCell>
+                    <TableCell align="right">
+                      <Chip
+                        label={`${review.score}/100`}
+                        color={getScoreColor(review.score)}
+                        size="small"
+                        variant="filled"
+                      />
+                    </TableCell>
+                    <TableCell>{review.comment}</TableCell>
+                    <TableCell>
+                      <Chip
+                        label={review.nominatedForPromotion ? 'Yes' : 'No'}
+                        color={review.nominatedForPromotion ? 'success' : 'default'}
+                        size="small"
+                        variant={review.nominatedForPromotion ? 'filled' : 'outlined'}
+                      />
+                    </TableCell>
+                    <TableCell>{format(new Date(review.createdAt), 'MMM dd, yyyy')}</TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Paper>
 
       {isHR && (
         <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>

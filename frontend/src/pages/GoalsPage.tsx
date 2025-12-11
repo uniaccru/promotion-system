@@ -238,9 +238,24 @@ const GoalsPage = () => {
   }
 
   return (
-    <Container maxWidth="lg">
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4">Управление целями</Typography>
+    <Container>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          mb: 3,
+          gap: 2,
+        }}
+      >
+        <Box>
+          <Typography variant="h4" sx={{ fontWeight: 700 }}>
+            Управление целями
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Создавайте шаблоны, назначайте задачи и отслеживайте прогресс
+          </Typography>
+        </Box>
         {isHR && (
           <Button variant="contained" startIcon={<Add />} onClick={() => handleOpenTemplateDialog()}>
             Создать общую цель

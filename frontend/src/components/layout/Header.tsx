@@ -1,4 +1,4 @@
-import { AppBar, Toolbar, Typography, Button, Box } from '@mui/material';
+import { AppBar, Toolbar, Typography, Button, Box, Avatar, Stack } from '@mui/material';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
@@ -12,19 +12,36 @@ const Header = () => {
   };
 
   return (
-    <AppBar position="static" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
+    <AppBar position="static" elevation={0} sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
       <Toolbar>
-        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-          Employee Grading System
+        <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 700, letterSpacing: 0.2 }}>
+          Performance Hub
         </Typography>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Typography variant="body1">
-            {user?.username} ({user?.role})
-          </Typography>
-          <Button color="inherit" onClick={handleLogout}>
+        <Stack direction="row" spacing={2} alignItems="center">
+          <Avatar
+            sx={{
+              bgcolor: 'primary.main',
+              color: 'primary.contrastText',
+              width: 36,
+              height: 36,
+              fontSize: 16,
+              fontWeight: 700,
+            }}
+          >
+            {user?.username?.[0]?.toUpperCase() || '?'}
+          </Avatar>
+          <Box sx={{ textAlign: 'right' }}>
+            <Typography variant="body1" sx={{ fontWeight: 600 }}>
+              {user?.username || 'User'}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {user?.role}
+            </Typography>
+          </Box>
+          <Button variant="outlined" onClick={handleLogout}>
             Logout
           </Button>
-        </Box>
+        </Stack>
       </Toolbar>
     </AppBar>
   );

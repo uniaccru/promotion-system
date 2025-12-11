@@ -1,4 +1,4 @@
-import { Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Toolbar } from '@mui/material';
+import { Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Toolbar, Box, Typography } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import PersonIcon from '@mui/icons-material/Person';
@@ -47,10 +47,38 @@ const Sidebar = () => {
         '& .MuiDrawer-paper': {
           width: drawerWidth,
           boxSizing: 'border-box',
+          paddingTop: 16,
+          background: '#ffffff',
         },
       }}
     >
-      <Toolbar />
+      <Toolbar disableGutters sx={{ px: 2, mb: 1 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <Box
+            sx={{
+              width: 36,
+              height: 36,
+              borderRadius: 10,
+              background: 'linear-gradient(135deg, rgba(75,44,72,0.95), rgba(26,156,139,0.9))',
+              display: 'grid',
+              placeItems: 'center',
+              color: '#fff',
+              fontWeight: 700,
+              letterSpacing: 0.2,
+            }}
+          >
+            G
+          </Box>
+          <Box>
+            <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.1 }}>
+              Grading
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Workspace
+            </Typography>
+          </Box>
+        </Box>
+      </Toolbar>
       <List>
         {menuItems.map((item) => (
           <ListItem key={item.text} disablePadding>
