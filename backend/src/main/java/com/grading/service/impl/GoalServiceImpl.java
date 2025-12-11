@@ -105,4 +105,12 @@ public class GoalServiceImpl implements GoalService {
         response.setUpdatedAt(assignment.getUpdatedAt());
         return response;
     }
+
+    @Override
+    public List<GoalResponse> getGoalsByEmployeeIdAndStatus(Long employeeId, String status) {
+        List<GoalAssignment> assignments = goalAssignmentRepository.findByEmployeeIdAndStatus(employeeId, status);
+        return assignments.stream()
+            .map(this::toGoalResponse)
+            .collect(Collectors.toList());
+    }
 }

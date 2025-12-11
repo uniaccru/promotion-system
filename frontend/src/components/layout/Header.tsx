@@ -15,7 +15,7 @@ const Header = () => {
     <AppBar position="static" elevation={0} sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
       <Toolbar>
         <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 700, letterSpacing: 0.2 }}>
-          Performance Hub
+          Grading System
         </Typography>
         <Stack direction="row" spacing={2} alignItems="center">
           <Avatar

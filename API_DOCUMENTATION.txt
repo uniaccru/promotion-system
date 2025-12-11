@@ -45,6 +45,7 @@ DELETE /goal-templates/{id} - Удалить шаблон (HR only)
 5. НАЗНАЧЕННЫЕ ЦЕЛИ
 ===================
 GET /goals/my-goals - Мои цели
+GET /goals/my-goals/completed - Мои выполненные цели (для прикрепления к заявке)
 GET /goals/{id} - Цель по ID
 GET /goals/employee/{employeeId} - Цели сотрудника
 GET /goals/all - Все цели (HR only)
@@ -70,6 +71,7 @@ PUT /evaluations/{id} - Обновить оценку (HR only)
 ======================
 GET /promotion-requests - Все заявки (HR only)
 GET /promotion-requests/{id} - Заявка по ID
+GET /promotion-requests/{id}/goals - Прикрепленные цели к заявке
 GET /promotion-requests/employee/{employeeId} - Заявки сотрудника
 GET /promotion-requests/status/{status} - Заявки по статусу (HR only)
 POST /promotion-requests - Создать заявку (employee/team_lead)
@@ -79,6 +81,9 @@ DELETE /promotion-requests/{id} - Удалить заявку (только pend
 PUT /promotion-requests/{id}/status?status=...&comment=... - Изменить статус (HR only)
 POST /promotion-requests/{id}/decision - Одобрить/отклонить (HR only)
   Body: { "decision": "approved|rejected", "comment": "..." }
+POST /promotion-requests/{id}/goals - Прикрепить цели к заявке
+  Body: [goalAssignmentId1, goalAssignmentId2, ...]
+DELETE /promotion-requests/{id}/goals/{goalAssignmentId} - Открепить цель от заявки
 
 Статусы заявок:
   pending → under_review → ready_for_calibration → in_calibration → 

@@ -13,5 +13,6 @@ public interface GoalService {
     GoalResponse getGoalAssignmentById(Long id);
     List<GoalResponse> getGoalsByEmployeeId(Long employeeId);
     List<GoalResponse> getGoalsByEmployeeIdAndReviewPeriod(Long employeeId, String reviewPeriod);
+    List<GoalResponse> getGoalsByEmployeeIdAndStatus(Long employeeId, String status);
     List<GoalResponse> getAllGoalAssignments();
 }

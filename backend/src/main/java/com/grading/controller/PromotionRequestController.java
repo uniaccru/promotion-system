@@ -3,23 +3,34 @@ package com.grading.controller;
 import com.grading.dto.request.ApprovePromotionRequest;
 import com.grading.dto.request.PromotionRequestRequest;
 import com.grading.dto.response.ApiResponse;
+import com.grading.dto.response.GoalResponse;
 import com.grading.dto.response.PromotionRequestResponse;
+import com.grading.dto.response.PromotionRequestFileResponse;
 import com.grading.entity.Employee;
+import com.grading.entity.PromotionRequestFile;
+import com.grading.model.PromotionRequestGoal;
 import com.grading.repository.EmployeeRepository;
+import com.grading.repository.PromotionRequestGoalRepository;
 import com.grading.repository.UserRepository;
 import com.grading.service.PromotionRequestService;
+import com.grading.service.GoalService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/promotion-requests")
@@ -30,6 +41,8 @@ public class PromotionRequestController {
     private final PromotionRequestService promotionRequestService;
     private final EmployeeRepository employeeRepository;
     private final UserRepository userRepository;
+    private final PromotionRequestGoalRepository promotionRequestGoalRepository;
+    private final GoalService goalService;
 
     @PostMapping
     @Operation(
@@ -242,6 +255,128 @@ public class PromotionRequestController {
             : "Promotion request rejected successfully.";
         
         return ResponseEntity.ok(ApiResponse.success(message, promotionRequest));
+    }
+
+    @PostMapping("/{id}/goals")
+    @Operation(
+        summary = "Прикрепить цели к заявке",
+        description = "Прикрепляет выполненные цели к заявке на повышение"
+    )
+    public ResponseEntity<ApiResponse<String>> attachGoalsToPromotionRequest(
+            @PathVariable Long id,
+            @RequestBody List<Long> goalAssignmentIds,
+            Authentication authentication) {
+        Employee currentEmployee = getCurrentEmployee(authentication);
+        
+        // Verify that the employee owns this promotion request
+        PromotionRequestResponse pr = promotionRequestService.getPromotionRequestById(id);
+        if (!pr.getEmployeeId().equals(currentEmployee.getId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ApiResponse.error("You can only attach goals to your own promotion requests"));
+        }
+        
+        promotionRequestService.attachGoalsToPromotionRequest(id, goalAssignmentIds);
+        return ResponseEntity.ok(ApiResponse.success("Goals attached successfully"));
+    }
+
+    @DeleteMapping("/{id}/goals/{goalAssignmentId}")
+    @Operation(
+        summary = "Открепить цель от заявки",
+        description = "Открепляет цель от заявки на повышение"
+    )
+    public ResponseEntity<ApiResponse<String>> detachGoalFromPromotionRequest(
+            @PathVariable Long id,
+            @PathVariable Long goalAssignmentId,
+            Authentication authentication) {
+        Employee currentEmployee = getCurrentEmployee(authentication);
+        
+        // Verify that the employee owns this promotion request
+        PromotionRequestResponse pr = promotionRequestService.getPromotionRequestById(id);
+        if (!pr.getEmployeeId().equals(currentEmployee.getId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ApiResponse.error("You can only detach goals from your own promotion requests"));
+        }
+        
+        promotionRequestService.detachGoalFromPromotionRequest(id, goalAssignmentId);
+        return ResponseEntity.ok(ApiResponse.success("Goal detached successfully"));
+    }
+
+    @GetMapping("/{id}/goals")
+    @Operation(
+        summary = "Получить цели заявки",
+        description = "Возвращает все прикрепленные цели к заявке на повышение"
+    )
+    public ResponseEntity<ApiResponse<List<GoalResponse>>> getPromotionRequestGoals(@PathVariable Long id) {
+        List<PromotionRequestGoal> prGoals = promotionRequestGoalRepository.findByPromotionRequestIdWithGoals(id);
+        List<GoalResponse> goals = prGoals.stream()
+            .map(prg -> goalService.getGoalAssignmentById(prg.getGoalAssignmentId()))
+            .collect(Collectors.toList());
+        return ResponseEntity.ok(ApiResponse.success(goals));
+    }
+
+    @PostMapping("/{id}/files")
+    @Operation(
+        summary = "Загрузить файл к заявке",
+        description = "Загружает файл-доказательство к заявке на повышение"
+    )
+    public ResponseEntity<ApiResponse<PromotionRequestFileResponse>> uploadFile(
+            @PathVariable Long id,
+            @RequestParam("file") MultipartFile file,
+            Authentication authentication) {
+        Employee currentEmployee = getCurrentEmployee(authentication);
+        
+        PromotionRequestResponse pr = promotionRequestService.getPromotionRequestById(id);
+        if (!pr.getEmployeeId().equals(currentEmployee.getId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ApiResponse.error("You can only upload files to your own promotion requests"));
+        }
+        
+        PromotionRequestFileResponse fileResponse = promotionRequestService.uploadFile(id, file);
+        return ResponseEntity.ok(ApiResponse.success("File uploaded successfully", fileResponse));
+    }
+
+    @GetMapping("/{id}/files")
+    @Operation(
+        summary = "Получить файлы заявки",
+        description = "Возвращает все прикрепленные файлы к заявке на повышение"
+    )
+    public ResponseEntity<ApiResponse<List<PromotionRequestFileResponse>>> getPromotionRequestFiles(@PathVariable Long id) {
+        List<PromotionRequestFileResponse> files = promotionRequestService.getPromotionRequestFiles(id);
+        return ResponseEntity.ok(ApiResponse.success(files));
+    }
+
+    @GetMapping("/files/{fileId}/download")
+    @Operation(
+        summary = "Скачать файл",
+        description = "Скачивает файл по его ID"
+    )
+    public ResponseEntity<Resource> downloadFile(@PathVariable Long fileId) {
+        // Get file metadata first
+        PromotionRequestFile fileEntity = promotionRequestService.getFileById(fileId);
+        
+        // Get file resource
+        Resource resource = promotionRequestService.downloadFile(fileId);
+        
+        return ResponseEntity.ok()
+            .contentType(MediaType.parseMediaType(fileEntity.getContentType()))
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileEntity.getFileName() + "\"")
+            .body(resource);
+    }
+
+    @DeleteMapping("/files/{fileId}")
+    @Operation(
+        summary = "Удалить файл",
+        description = "Удаляет файл из заявки на повышение"
+    )
+    public ResponseEntity<ApiResponse<String>> deleteFile(
+            @PathVariable Long fileId,
+            Authentication authentication) {
+        Employee currentEmployee = getCurrentEmployee(authentication);
+        
+        // TODO: Add permission check
+        
+        promotionRequestService.deleteFile(fileId);
+        return ResponseEntity.ok(ApiResponse.success("File deleted successfully"));
     }
 
     private Employee getCurrentEmployee(Authentication authentication) {

@@ -52,6 +52,11 @@ export const goalService = {
     return response.data.data;
   },
 
+  getMyCompletedGoals: async (): Promise<Goal[]> => {
+    const response = await api.get<ApiResponse<Goal[]>>('/goals/my-goals/completed');
+    return response.data.data;
+  },
+
   getAllGoalAssignments: async (): Promise<Goal[]> => {
     const response = await api.get<ApiResponse<Goal[]>>('/goals/all');
     return response.data.data;

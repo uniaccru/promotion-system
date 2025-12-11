@@ -2,21 +2,39 @@ package com.grading.service.impl;
 
 import com.grading.dto.request.PromotionRequestRequest;
 import com.grading.dto.response.PromotionRequestResponse;
+import com.grading.dto.response.PromotionRequestFileResponse;
 import com.grading.entity.Employee;
 import com.grading.entity.Grade;
 import com.grading.entity.GradeHistory;
 import com.grading.entity.PromotionRequest;
+import com.grading.entity.PromotionRequestFile;
+import com.grading.entity.GoalAssignment;
+import com.grading.model.PromotionRequestGoal;
 import com.grading.repository.EmployeeRepository;
 import com.grading.repository.GradeRepository;
 import com.grading.repository.GradeHistoryRepository;
 import com.grading.repository.PromotionRequestRepository;
+import com.grading.repository.GoalAssignmentRepository;
+import com.grading.repository.PromotionRequestGoalRepository;
+import com.grading.repository.PromotionRequestFileRepository;
 import com.grading.service.PromotionRequestService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -26,6 +44,12 @@ public class PromotionRequestServiceImpl implements PromotionRequestService {
     private final EmployeeRepository employeeRepository;
     private final GradeRepository gradeRepository;
     private final GradeHistoryRepository gradeHistoryRepository;
+    private final GoalAssignmentRepository goalAssignmentRepository;
+    private final PromotionRequestGoalRepository promotionRequestGoalRepository;
+    private final PromotionRequestFileRepository promotionRequestFileRepository;
+
+    @Value("${file.upload-dir:./uploads}")
+    private String uploadDir;
 
     @Override
     @Transactional
@@ -198,6 +222,139 @@ public class PromotionRequestServiceImpl implements PromotionRequestService {
         response.setStatus(pr.getStatus());
         response.setHrComment(pr.getHrComment());
         response.setCreatedAt(pr.getCreatedAt());
+        return response;
+    }
+
+    @Override
+    @Transactional
+    public void attachGoalsToPromotionRequest(Long promotionRequestId, List<Long> goalAssignmentIds) {
+        PromotionRequest promotionRequest = promotionRequestRepository.findById(promotionRequestId)
+            .orElseThrow(() -> new RuntimeException("Promotion request not found"));
+
+        for (Long goalAssignmentId : goalAssignmentIds) {
+            GoalAssignment goalAssignment = goalAssignmentRepository.findById(goalAssignmentId)
+                .orElseThrow(() -> new RuntimeException("Goal assignment not found: " + goalAssignmentId));
+
+            // Verify that the goal assignment belongs to the same employee
+            if (!goalAssignment.getEmployee().getId().equals(promotionRequest.getEmployee().getId())) {
+                throw new RuntimeException("Goal assignment does not belong to the employee");
+            }
+
+            // Verify that the goal is completed
+            if (!"completed".equalsIgnoreCase(goalAssignment.getStatus())) {
+                throw new RuntimeException("Only completed goals can be attached to promotion requests");
+            }
+
+            PromotionRequestGoal prGoal = new PromotionRequestGoal();
+            prGoal.setPromotionRequestId(promotionRequestId);
+            prGoal.setGoalAssignmentId(goalAssignmentId);
+            promotionRequestGoalRepository.save(prGoal);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void detachGoalFromPromotionRequest(Long promotionRequestId, Long goalAssignmentId) {
+        PromotionRequestGoal.PromotionRequestGoalId id = 
+            new PromotionRequestGoal.PromotionRequestGoalId(promotionRequestId, goalAssignmentId);
+        promotionRequestGoalRepository.deleteById(id);
+    }
+
+    @Override
+    @Transactional
+    public PromotionRequestFileResponse uploadFile(Long promotionRequestId, MultipartFile file) {
+        PromotionRequest promotionRequest = promotionRequestRepository.findById(promotionRequestId)
+            .orElseThrow(() -> new RuntimeException("Promotion request not found"));
+
+        try {
+            // Create upload directory if it doesn't exist
+            Path uploadPath = Paths.get(uploadDir);
+            if (!Files.exists(uploadPath)) {
+                Files.createDirectories(uploadPath);
+            }
+
+            // Generate unique filename
+            String originalFilename = file.getOriginalFilename();
+            String extension = originalFilename != null && originalFilename.contains(".") 
+                ? originalFilename.substring(originalFilename.lastIndexOf(".")) 
+                : "";
+            String uniqueFilename = UUID.randomUUID().toString() + extension;
+            Path filePath = uploadPath.resolve(uniqueFilename);
+
+            // Save file
+            Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+            // Save file info to database
+            PromotionRequestFile fileEntity = new PromotionRequestFile();
+            fileEntity.setPromotionRequest(promotionRequest);
+            fileEntity.setFileName(originalFilename);
+            fileEntity.setFilePath(uniqueFilename);
+            fileEntity.setFileSize(file.getSize());
+            fileEntity.setContentType(file.getContentType());
+            promotionRequestFileRepository.save(fileEntity);
+
+            return toFileResponse(fileEntity);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to upload file: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public List<PromotionRequestFileResponse> getPromotionRequestFiles(Long promotionRequestId) {
+        List<PromotionRequestFile> files = promotionRequestFileRepository.findByPromotionRequestId(promotionRequestId);
+        return files.stream()
+            .map(this::toFileResponse)
+            .collect(Collectors.toList());
+    }
+
+    @Override
+    public Resource downloadFile(Long fileId) {
+        PromotionRequestFile file = promotionRequestFileRepository.findById(fileId)
+            .orElseThrow(() -> new RuntimeException("File not found"));
+
+        try {
+            Path filePath = Paths.get(uploadDir).resolve(file.getFilePath()).normalize();
+            Resource resource = new UrlResource(filePath.toUri());
+            
+            if (resource.exists() && resource.isReadable()) {
+                return resource;
+            } else {
+                throw new RuntimeException("File not found or not readable: " + file.getFileName());
+            }
+        } catch (MalformedURLException e) {
+            throw new RuntimeException("File not found: " + file.getFileName(), e);
+        }
+    }
+
+    @Override
+    public PromotionRequestFile getFileById(Long fileId) {
+        return promotionRequestFileRepository.findById(fileId)
+            .orElseThrow(() -> new RuntimeException("File not found with id: " + fileId));
+    }
+
+    @Override
+    @Transactional
+    public void deleteFile(Long fileId) {
+        PromotionRequestFile file = promotionRequestFileRepository.findById(fileId)
+            .orElseThrow(() -> new RuntimeException("File not found"));
+
+        try {
+            Path filePath = Paths.get(uploadDir).resolve(file.getFilePath()).normalize();
+            Files.deleteIfExists(filePath);
+            promotionRequestFileRepository.deleteById(fileId);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to delete file: " + e.getMessage(), e);
+        }
+    }
+
+    private PromotionRequestFileResponse toFileResponse(PromotionRequestFile file) {
+        PromotionRequestFileResponse response = new PromotionRequestFileResponse();
+        response.setId(file.getId());
+        response.setPromotionRequestId(file.getPromotionRequest().getId());
+        response.setFileName(file.getFileName());
+        response.setFileSize(file.getFileSize());
+        response.setContentType(file.getContentType());
+        response.setUploadedAt(file.getUploadedAt());
         return response;
     }
 }

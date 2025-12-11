@@ -122,6 +122,24 @@ CREATE TABLE grading2.calibration_evaluators (
     PRIMARY KEY (calibration_id, evaluator_id)
 );
 
+-- Promotion request goals table (many-to-many relationship)
+CREATE TABLE grading2.promotion_request_goals (
+    promotion_request_id BIGINT NOT NULL REFERENCES grading2.promotion_requests(id) ON DELETE CASCADE,
+    goal_assignment_id BIGINT NOT NULL REFERENCES grading2.goal_assignments(id) ON DELETE CASCADE,
+    PRIMARY KEY (promotion_request_id, goal_assignment_id)
+);
+
+-- Promotion request files table
+CREATE TABLE grading2.promotion_request_files (
+    id BIGSERIAL PRIMARY KEY,
+    promotion_request_id BIGINT NOT NULL REFERENCES grading2.promotion_requests(id) ON DELETE CASCADE,
+    file_name TEXT NOT NULL,
+    file_path TEXT NOT NULL,
+    file_size BIGINT NOT NULL,
+    content_type TEXT NOT NULL,
+    uploaded_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Indexes
 CREATE INDEX idx_pr_emp_grade_status ON promotion_requests(employee_id, requested_grade_id, status) 
 WHERE status IN ('pending', 'under_review', 'ready_for_calibration', 'in_calibration');
@@ -135,6 +153,9 @@ CREATE INDEX idx_comparisons_candidate_a ON comparisons(candidate_a_id);
 CREATE INDEX idx_comparisons_candidate_b ON comparisons(candidate_b_id);
 CREATE INDEX idx_calibration_evaluators_calibration ON grading2.calibration_evaluators(calibration_id);
 CREATE INDEX idx_calibration_evaluators_evaluator ON grading2.calibration_evaluators(evaluator_id);
+CREATE INDEX idx_pr_goals_pr ON grading2.promotion_request_goals(promotion_request_id);
+CREATE INDEX idx_pr_goals_goal ON grading2.promotion_request_goals(goal_assignment_id);
+CREATE INDEX idx_pr_files_pr ON grading2.promotion_request_files(promotion_request_id);
 
 -- Triggers
 CREATE OR REPLACE FUNCTION create_grade_history_on_approval()

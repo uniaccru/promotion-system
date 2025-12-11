@@ -2,6 +2,10 @@ package com.grading.service;
 
 import com.grading.dto.request.PromotionRequestRequest;
 import com.grading.dto.response.PromotionRequestResponse;
+import com.grading.dto.response.PromotionRequestFileResponse;
+import com.grading.entity.PromotionRequestFile;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.core.io.Resource;
 
 import java.util.List;
 
@@ -15,4 +19,11 @@ public interface PromotionRequestService {
     List<PromotionRequestResponse> getPromotionRequestsByEmployeeId(Long employeeId);
     List<PromotionRequestResponse> getPromotionRequestsByStatus(String status);
     List<PromotionRequestResponse> getAllPromotionRequests();
+    void attachGoalsToPromotionRequest(Long promotionRequestId, List<Long> goalAssignmentIds);
+    void detachGoalFromPromotionRequest(Long promotionRequestId, Long goalAssignmentId);
+    PromotionRequestFileResponse uploadFile(Long promotionRequestId, MultipartFile file);
+    List<PromotionRequestFileResponse> getPromotionRequestFiles(Long promotionRequestId);
+    PromotionRequestFile getFileById(Long fileId);
+    Resource downloadFile(Long fileId);
+    void deleteFile(Long fileId);
 }

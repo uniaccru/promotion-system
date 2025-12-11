@@ -129,6 +129,17 @@ public class GoalController {
         return ResponseEntity.ok(ApiResponse.success(goals));
     }
 
+    @GetMapping("/my-goals/completed")
+    @Operation(
+        summary = "Получить свои выполненные цели",
+        description = "Возвращает все выполненные цели текущего сотрудника для прикрепления к заявке на повышение"
+    )
+    public ResponseEntity<ApiResponse<List<GoalResponse>>> getMyCompletedGoals(Authentication authentication) {
+        Employee currentEmployee = getCurrentEmployee(authentication);
+        List<GoalResponse> goals = goalService.getGoalsByEmployeeIdAndStatus(currentEmployee.getId(), "completed");
+        return ResponseEntity.ok(ApiResponse.success(goals));
+    }
+
     @GetMapping("/all")
     @Operation(
         summary = "Получить все назначения целей",

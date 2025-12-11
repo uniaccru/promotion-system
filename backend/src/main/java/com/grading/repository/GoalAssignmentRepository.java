@@ -15,6 +15,9 @@ public interface GoalAssignmentRepository extends JpaRepository<GoalAssignment, 
     @Query("SELECT ga FROM GoalAssignment ga WHERE ga.employee.id = :employeeId AND ga.goal.reviewPeriod = :reviewPeriod")
     List<GoalAssignment> findByEmployeeIdAndReviewPeriod(@Param("employeeId") Long employeeId, @Param("reviewPeriod") String reviewPeriod);
     
+    @Query("SELECT ga FROM GoalAssignment ga WHERE ga.employee.id = :employeeId AND ga.status = :status")
+    List<GoalAssignment> findByEmployeeIdAndStatus(@Param("employeeId") Long employeeId, @Param("status") String status);
+    
     @Query("SELECT ga FROM GoalAssignment ga " +
            "LEFT JOIN FETCH ga.goal " +
            "LEFT JOIN FETCH ga.employee " +

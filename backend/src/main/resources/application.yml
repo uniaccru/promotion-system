@@ -18,6 +18,10 @@ spring:
   sql:
     init:
       mode: never
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
 
 server:
   port: 8080
@@ -27,6 +31,9 @@ server:
 jwt:
   secret: your-secret-key-change-this-in-production-minimum-256-bits
   expiration: 86400000
+
+file:
+  upload-dir: ./uploads
 
 springdoc:
   api-docs:
