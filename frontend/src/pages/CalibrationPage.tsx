@@ -182,18 +182,18 @@ const CalibrationPage = () => {
   const handleCreatePackage = async () => {
     try {
       if (formData.promotionRequestIds.length < 3) {
-        alert('Необходимо выбрать минимум 3 заявки на повышение');
+        alert('You must select at least 3 promotion requests');
         return;
       }
       if (formData.evaluatorIds.length !== 2) {
-        alert('Необходимо выбрать ровно 2 тимлида');
+        alert('You must select exactly 2 team leads');
         return;
       }
       await calibrationService.createCalibrationPackage(formData);
       handleCloseCreateDialog();
       fetchData();
     } catch (error: any) {
-      alert('Ошибка при создании пакета: ' + (error.response?.data?.message || error.message));
+      alert('Error creating package: ' + (error.response?.data?.message || error.message));
     }
   };
 
@@ -210,7 +210,7 @@ const CalibrationPage = () => {
       console.log('Pending comparisons:', pending);
       
       if (pending.length === 0) {
-        alert('Все сравнения уже выполнены. Ожидайте завершения калибровки другим тимлидом.');
+        alert('All comparisons have been completed. Waiting for other team leads to finish calibration.');
         return;
       }
       
@@ -219,7 +219,7 @@ const CalibrationPage = () => {
       setOpenComparisonDialog(true);
     } catch (error) {
       console.error('Failed to start calibration:', error);
-      alert('Ошибка при запуске калибровки: ' + (error as any).message);
+      alert('Error starting calibration: ' + (error as any).message);
     }
   };
 
@@ -277,12 +277,12 @@ const CalibrationPage = () => {
           await calibrationService.updateStatus(selectedCalibration.id, 'completed');
           setOpenComparisonDialog(false);
           fetchData();
-          alert('Калибровка завершена! Рейтинг кандидатов рассчитан.');
+          alert('Calibration completed! Candidate rankings have been calculated.');
         } else {
           // This evaluator is done, but waiting for the other one
           setOpenComparisonDialog(false);
           fetchData();
-          alert('Вы завершили все сравнения. Ожидайте завершения калибровки другим тимлидом.');
+          alert('You have completed all comparisons. Waiting for other team leads to finish calibration.');
         }
       } else {
         // Move to next comparison
@@ -290,7 +290,7 @@ const CalibrationPage = () => {
       }
     } catch (error) {
       console.error('Failed to submit comparison:', error);
-      alert('Ошибка при сохранении сравнения: ' + (error as any).message);
+      alert('Error saving comparison: ' + (error as any).message);
     }
   };
 
@@ -338,41 +338,41 @@ const CalibrationPage = () => {
       setOpenRankingDialog(true);
     } catch (error) {
       console.error('Failed to fetch ranking:', error);
-      alert('Ошибка при получении рейтинга: ' + (error as any).message);
+      alert('Error getting ranking: ' + (error as any).message);
     }
   };
 
   const handleApprovePromotion = async (promotionRequestId: number) => {
-    const comment = prompt('Введите комментарий (необязательно):');
+    const comment = prompt('Enter comment (optional):');
     try {
       await promotionService.approveOrRejectPromotion(promotionRequestId, 'approved', comment || undefined);
-      alert('Повышение одобрено! Новый грейд присвоен сотруднику.');
+      alert('Promotion approved! New grade assigned to employee.');
       if (selectedCalibration) {
         handleViewRanking(selectedCalibration);
       }
       fetchData();
     } catch (error: any) {
       console.error('Failed to approve promotion:', error);
-      alert(error.response?.data?.message || 'Ошибка при одобрении повышения');
+      alert(error.response?.data?.message || 'Error approving promotion');
     }
   };
 
   const handleRejectPromotion = async (promotionRequestId: number) => {
-    const comment = prompt('Введите причину отклонения:');
+    const comment = prompt('Enter rejection reason:');
     if (!comment || comment.trim() === '') {
-      alert('Необходимо указать причину отклонения');
+      alert('Rejection reason is required');
       return;
     }
     try {
       await promotionService.approveOrRejectPromotion(promotionRequestId, 'rejected', comment);
-      alert('Повышение отклонено');
+      alert('Promotion rejected');
       if (selectedCalibration) {
         handleViewRanking(selectedCalibration);
       }
       fetchData();
     } catch (error: any) {
       console.error('Failed to reject promotion:', error);
-      alert(error.response?.data?.message || 'Ошибка при отклонении повышения');
+      alert(error.response?.data?.message || 'Error rejecting promotion');
     }
   };
 
@@ -392,11 +392,11 @@ const CalibrationPage = () => {
   const getStatusLabel = (status: string) => {
     switch (status) {
       case 'planning':
-        return 'Планирование';
+        return 'Planning';
       case 'active':
-        return 'Активна';
+        return 'Active';
       case 'completed':
-        return 'Завершена';
+        return 'Completed';
       default:
         return status;
     }
@@ -415,10 +415,10 @@ const CalibrationPage = () => {
   return (
     <Container maxWidth="lg">
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4">Калибровка</Typography>
+        <Typography variant="h4">Calibration</Typography>
         {isHR && (
           <Button variant="contained" startIcon={<Add />} onClick={handleOpenCreateDialog}>
-            Создать пакет калибровки
+            Create Calibration Batch
           </Button>
         )}
       </Box>
@@ -426,8 +426,8 @@ const CalibrationPage = () => {
       {isHR && (
         <Paper sx={{ mb: 3 }}>
           <Tabs value={tabValue} onChange={(_e, v) => setTabValue(v)}>
-            <Tab label="Пакеты калибровки" />
-            <Tab label="Результаты" />
+            <Tab label="Calibration Batches" />
+            <Tab label="Results" />
           </Tabs>
           <Box p={3}>
             {tabValue === 0 && (
@@ -436,12 +436,12 @@ const CalibrationPage = () => {
                   <TableHead>
                     <TableRow>
                       <TableCell>ID</TableCell>
-                      <TableCell>Грейд</TableCell>
-                      <TableCell>Кандидатов</TableCell>
-                      <TableCell>Тимлиды</TableCell>
-                      <TableCell>Статус</TableCell>
-                      <TableCell>Дата создания</TableCell>
-                      <TableCell>Действия</TableCell>
+                      <TableCell>Grade</TableCell>
+                      <TableCell>Candidates</TableCell>
+                      <TableCell>Team Leads</TableCell>
+                      <TableCell>Status</TableCell>
+                      <TableCell>Created Date</TableCell>
+                      <TableCell>Actions</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -451,7 +451,7 @@ const CalibrationPage = () => {
                         <TableCell>{cal.gradeName || `Grade ${cal.gradeId}`}</TableCell>
                         <TableCell>{cal.candidateCount || 0}</TableCell>
                         <TableCell>
-                          {cal.evaluatorNames?.join(', ') || 'Не назначены'}
+                          {cal.evaluatorNames?.join(', ') || 'Not assigned'}
                         </TableCell>
                         <TableCell>
                           <Chip
@@ -483,13 +483,13 @@ const CalibrationPage = () => {
             {tabValue === 1 && (
               <Box>
                 <Typography variant="h6" gutterBottom>
-                  Результаты калибровок
+                  Calibration Results
                 </Typography>
                 {calibrations
                   .filter(c => c.status === 'completed' || c.status === 'active')
                   .length === 0 ? (
                     <Alert severity="info" sx={{ mt: 2 }}>
-                      Нет доступных результатов. Дождитесь завершения калибровок тимлидами.
+                      No results available. Wait for team leads to complete calibrations.
                     </Alert>
                   ) : (
                     calibrations
@@ -500,10 +500,10 @@ const CalibrationPage = () => {
                             <Box display="flex" justifyContent="space-between" alignItems="center">
                               <Box>
                                 <Typography variant="h6">
-                                  Пакет #{cal.id} - {cal.gradeName}
+                                  Batch #{cal.id} - {cal.gradeName}
                                 </Typography>
                                 <Typography variant="body2" color="text.secondary">
-                                  Кандидатов: {cal.candidateCount}
+                                  Candidates: {cal.candidateCount}
                                 </Typography>
                                 <Chip
                                   label={getStatusLabel(cal.status)}
@@ -516,7 +516,7 @@ const CalibrationPage = () => {
                                 variant="outlined"
                                 onClick={() => handleViewRanking(cal)}
                               >
-                                Просмотреть рейтинг
+                                View Ranking
                               </Button>
                             </Box>
                           </CardContent>
@@ -532,11 +532,11 @@ const CalibrationPage = () => {
       {isTeamLead && (
         <Box>
           <Typography variant="h6" gutterBottom>
-            Назначенные калибровки
+            Assigned Calibrations
           </Typography>
           {calibrations.length === 0 ? (
             <Alert severity="info" sx={{ mt: 2 }}>
-              У вас нет назначенных калибровок. Ожидайте назначения от HR.
+              You have no assigned calibrations. Wait for assignment from HR.
             </Alert>
           ) : (
             <Grid container spacing={2}>
@@ -545,10 +545,10 @@ const CalibrationPage = () => {
                   <Card>
                     <CardContent>
                       <Typography variant="h6">
-                        Пакет #{cal.id} - {cal.gradeName}
+                        Batch #{cal.id} - {cal.gradeName}
                       </Typography>
-                      <Typography variant="body2" color="text.secondary" gutterBottom>
-                        Кандидатов: {cal.candidateCount}
+                      <Typography variant="body2" color="text.secondary">
+                        Candidates: {cal.candidateCount}
                       </Typography>
                       <Chip
                         label={getStatusLabel(cal.status)}
@@ -564,7 +564,7 @@ const CalibrationPage = () => {
                             startIcon={<PlayArrow />}
                             onClick={() => handleStartCalibration(cal)}
                           >
-                            Начать калибровку
+                            Start Calibration
                           </Button>
                         )}
                         {cal.status === 'active' && (
@@ -574,12 +574,12 @@ const CalibrationPage = () => {
                             startIcon={<PlayArrow />}
                             onClick={() => handleStartCalibration(cal)}
                           >
-                            Продолжить сравнение
+                            Continue Comparison
                           </Button>
                         )}
                         {cal.status === 'completed' && (
                           <Alert severity="success">
-                            Калибровка завершена
+                            Calibration Completed
                           </Alert>
                         )}
                       </Box>
@@ -594,15 +594,15 @@ const CalibrationPage = () => {
 
       {/* Create Package Dialog */}
       <Dialog open={openCreateDialog} onClose={handleCloseCreateDialog} maxWidth="md" fullWidth>
-        <DialogTitle>Создать пакет калибровки</DialogTitle>
+        <DialogTitle>Create Calibration Batch</DialogTitle>
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
             <FormControl fullWidth>
-              <InputLabel>Грейд</InputLabel>
+              <InputLabel>Grade</InputLabel>
               <Select
                 value={formData.gradeId}
                 onChange={(e) => setFormData({ ...formData, gradeId: Number(e.target.value) })}
-                label="Грейд"
+                label="Grade"
               >
                 {grades.map((grade) => (
                   <MenuItem key={grade.id} value={grade.id}>
@@ -613,7 +613,7 @@ const CalibrationPage = () => {
             </FormControl>
 
             <FormControl fullWidth>
-              <InputLabel>Заявки на повышение (минимум 3)</InputLabel>
+              <InputLabel>Promotion Requests (minimum 3)</InputLabel>
               <Select
                 multiple
                 value={formData.promotionRequestIds}
@@ -623,10 +623,10 @@ const CalibrationPage = () => {
                     promotionRequestIds: e.target.value as number[],
                   })
                 }
-                label="Заявки на повышение (минимум 3)"
+                label="Promotion Requests (minimum 3)"
                 renderValue={(selected) =>
                   selected.length === 0
-                    ? 'Выберите заявки'
+                    ? 'Select requests'
                     : selected
                         .map(
                           (id) =>
@@ -636,7 +636,7 @@ const CalibrationPage = () => {
                 }
               >
                 {promotionRequests.length === 0 ? (
-                  <MenuItem disabled>Нет доступных заявок на повышение</MenuItem>
+                  <MenuItem disabled>No promotion requests available</MenuItem>
                 ) : (
                   promotionRequests
                     .filter((pr) => pr.requestedGradeId === formData.gradeId || formData.gradeId === 0)
@@ -647,7 +647,7 @@ const CalibrationPage = () => {
                         />
                         <ListItemText
                           primary={pr.employeeName}
-                          secondary={`Грейд: ${pr.requestedGradeName}, Статус: ${pr.status}`}
+                          secondary={`Grade: ${pr.requestedGradeName}, Status: ${pr.status}`}
                         />
                       </MenuItem>
                     ))
@@ -655,13 +655,13 @@ const CalibrationPage = () => {
               </Select>
               {promotionRequests.length === 0 && (
                 <Alert severity="info" sx={{ mt: 1 }}>
-                  Нет доступных заявок на повышение. Убедитесь, что есть заявки со статусом "pending", "under_review" или "ready_for_calibration".
+                  No promotion requests available. Make sure there are requests with status "pending", "under_review" or "ready_for_calibration".
                 </Alert>
               )}
             </FormControl>
 
             <FormControl fullWidth>
-              <InputLabel>Тимлиды (ровно 2)</InputLabel>
+              <InputLabel>Team Leads (exactly 2)</InputLabel>
               <Select
                 multiple
                 value={formData.evaluatorIds}
@@ -671,17 +671,17 @@ const CalibrationPage = () => {
                     evaluatorIds: e.target.value as number[],
                   })
                 }
-                label="Тимлиды (ровно 2)"
+                label="Team Leads (exactly 2)"
                 renderValue={(selected) =>
                   selected.length === 0
-                    ? 'Выберите тимлидов'
+                    ? 'Select team leads'
                     : selected
                         .map((id) => employees.find((e) => e.id === id)?.fullName || `#${id}`)
                         .join(', ')
                 }
               >
                 {employees.length === 0 ? (
-                  <MenuItem disabled>Нет доступных тимлидов</MenuItem>
+                  <MenuItem disabled>No team leads available</MenuItem>
                 ) : (
                   employees.map((emp) => (
                     <MenuItem key={emp.id} value={emp.id}>
@@ -696,16 +696,16 @@ const CalibrationPage = () => {
               </Select>
               {employees.length === 0 && (
                 <Alert severity="info" sx={{ mt: 1 }}>
-                  Нет доступных тимлидов. Убедитесь, что есть сотрудники с ролью "Team Lead" или "team_lead".
+                  No team leads available. Make sure there are employees with the "Team Lead" or "team_lead" role.
                 </Alert>
               )}
             </FormControl>
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseCreateDialog}>Отмена</Button>
+          <Button onClick={handleCloseCreateDialog}>Cancel</Button>
           <Button onClick={handleCreatePackage} variant="contained">
-            Создать
+            Create
           </Button>
         </DialogActions>
       </Dialog>
@@ -714,7 +714,7 @@ const CalibrationPage = () => {
       <Dialog
         open={openComparisonDialog}
         onClose={() => {
-          if (window.confirm('Вы уверены, что хотите закрыть? Прогресс будет сохранен, вы сможете продолжить позже.')) {
+          if (window.confirm('Are you sure you want to close? Progress will be saved, you can continue later.')) {
             setOpenComparisonDialog(false);
             fetchData(); // Refresh to show updated status
           }
@@ -723,16 +723,16 @@ const CalibrationPage = () => {
         fullWidth
       >
         <DialogTitle>
-          Попарное сравнение кандидатов
+          Pairwise Candidate Comparison
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            Прогресс: {currentComparisonIndex + 1} из {pendingComparisons.length}
+            Progress: {currentComparisonIndex + 1} of {pendingComparisons.length}
           </Typography>
         </DialogTitle>
         <DialogContent>
           {pendingComparisons.length > 0 && currentComparisonIndex < pendingComparisons.length && (
             <Box sx={{ mt: 2 }}>
               <Typography variant="h6" gutterBottom align="center">
-                Выберите лучшего кандидата
+                Select the Better Candidate
               </Typography>
               <Grid container spacing={3} sx={{ mt: 2 }}>
                 <Grid item xs={6}>
@@ -758,11 +758,11 @@ const CalibrationPage = () => {
                       {pendingComparisons[currentComparisonIndex].candidateAName}
                     </Typography>
                     <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ mt: 2 }}>
-                      Обоснование:
+                      Justification:
                     </Typography>
                     <Paper sx={{ p: 2, bgcolor: 'grey.50', maxHeight: '200px', overflow: 'auto' }}>
                       <Typography variant="body2" style={{ whiteSpace: 'pre-wrap' }}>
-                        {pendingComparisons[currentComparisonIndex].candidateAJustification || 'Нет обоснования'}
+                        {pendingComparisons[currentComparisonIndex].candidateAJustification || 'No justification provided'}
                       </Typography>
                     </Paper>
                   </Card>
@@ -790,11 +790,11 @@ const CalibrationPage = () => {
                       {pendingComparisons[currentComparisonIndex].candidateBName}
                     </Typography>
                     <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ mt: 2 }}>
-                      Обоснование:
+                      Justification:
                     </Typography>
                     <Paper sx={{ p: 2, bgcolor: 'grey.50', maxHeight: '200px', overflow: 'auto' }}>
                       <Typography variant="body2" style={{ whiteSpace: 'pre-wrap' }}>
-                        {pendingComparisons[currentComparisonIndex].candidateBJustification || 'Нет обоснования'}
+                        {pendingComparisons[currentComparisonIndex].candidateBJustification || 'No justification provided'}
                       </Typography>
                     </Paper>
                   </Card>
@@ -805,12 +805,12 @@ const CalibrationPage = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => {
-            if (window.confirm('Вы уверены, что хотите закрыть? Прогресс будет сохранен, вы сможете продолжить позже.')) {
+            if (window.confirm('Are you sure you want to close? Progress will be saved, you can continue later.')) {
               setOpenComparisonDialog(false);
               fetchData();
             }
           }}>
-            Закрыть и продолжить позже
+            Close and Continue Later
           </Button>
         </DialogActions>
       </Dialog>
@@ -822,21 +822,21 @@ const CalibrationPage = () => {
         maxWidth="md"
         fullWidth
       >
-        <DialogTitle>Рейтинг кандидатов</DialogTitle>
+        <DialogTitle>Candidate Rankings</DialogTitle>
         <DialogContent>
           {ranking && (
             <TableContainer>
               <Table>
                 <TableHead>
                   <TableRow>
-                    <TableCell>Место</TableCell>
-                    <TableCell>Кандидат</TableCell>
-                    <TableCell>Запрошенный грейд</TableCell>
-                    <TableCell>Статус</TableCell>
-                    <TableCell>Побед</TableCell>
-                    <TableCell>Всего сравнений</TableCell>
-                    <TableCell>Процент побед</TableCell>
-                    {isHR && <TableCell>Действия</TableCell>}
+                    <TableCell>Rank</TableCell>
+                    <TableCell>Candidate</TableCell>
+                    <TableCell>Requested Grade</TableCell>
+                    <TableCell>Status</TableCell>
+                    <TableCell>Wins</TableCell>
+                    <TableCell>Total Comparisons</TableCell>
+                    <TableCell>Win Rate</TableCell>
+                    {isHR && <TableCell>Actions</TableCell>}
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -870,7 +870,7 @@ const CalibrationPage = () => {
                                 color="success"
                                 onClick={() => handleApprovePromotion(candidate.promotionRequestId)}
                               >
-                                Одобрить
+                                Approve
                               </Button>
                               <Button 
                                 size="small" 
@@ -878,13 +878,13 @@ const CalibrationPage = () => {
                                 color="error"
                                 onClick={() => handleRejectPromotion(candidate.promotionRequestId)}
                               >
-                                Отклонить
+                                Reject
                               </Button>
                             </Box>
                           ) : (
                             <Typography variant="body2" color="text.secondary">
-                              {candidate.currentStatus === 'approved' ? 'Одобрено' : 
-                               candidate.currentStatus === 'rejected' ? 'Отклонено' : '-'}
+                              {candidate.currentStatus === 'approved' ? 'Approved' : 
+                               candidate.currentStatus === 'rejected' ? 'Rejected' : '-'}
                             </Typography>
                           )}
                         </TableCell>
@@ -897,7 +897,7 @@ const CalibrationPage = () => {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenRankingDialog(false)}>Закрыть</Button>
+          <Button onClick={() => setOpenRankingDialog(false)}>Close</Button>
         </DialogActions>
       </Dialog>
     </Container>

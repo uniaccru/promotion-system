@@ -126,7 +126,7 @@ const GoalsPage = () => {
 
   const handleSubmitTemplate = async () => {
     if (!templateFormData.title.trim() || !templateFormData.description.trim() || !templateFormData.metric.trim()) {
-      alert('Пожалуйста, заполните все обязательные поля');
+      alert('Please fill all required fields');
       return;
     }
 
@@ -140,18 +140,18 @@ const GoalsPage = () => {
       handleCloseTemplateDialog();
     } catch (error: any) {
       console.error('Failed to save goal template:', error);
-      alert(error.response?.data?.message || 'Ошибка при сохранении шаблона цели');
+      alert(error.response?.data?.message || 'Error saving goal template');
     }
   };
 
   const handleDeleteTemplate = async (id: number) => {
-    if (window.confirm('Вы уверены, что хотите удалить этот шаблон цели?')) {
+    if (window.confirm('Are you sure you want to delete this goal template?')) {
       try {
         await goalService.deleteGoalTemplate(id);
         fetchData();
       } catch (error) {
         console.error('Failed to delete goal template:', error);
-        alert('Ошибка при удалении шаблона цели');
+        alert('Error deleting goal template');
       }
     }
   };
@@ -171,7 +171,7 @@ const GoalsPage = () => {
 
   const handleSubmitAssign = async () => {
     if (!assignFormData.employeeId || !assignFormData.dueDate) {
-      alert('Пожалуйста, выберите сотрудника и дату выполнения');
+      alert('Please select an employee and due date');
       return;
     }
 
@@ -179,10 +179,10 @@ const GoalsPage = () => {
       await goalService.assignGoal(assignFormData);
       fetchData();
       handleCloseAssignDialog();
-      alert('Цель успешно назначена сотруднику');
+      alert('Goal successfully assigned to employee');
     } catch (error: any) {
       console.error('Failed to assign goal:', error);
-      alert(error.response?.data?.message || 'Ошибка при назначении цели');
+      alert(error.response?.data?.message || 'Error assigning goal');
     }
   };
 
@@ -206,23 +206,19 @@ const GoalsPage = () => {
       handleCloseStatusDialog();
     } catch (error: any) {
       console.error('Failed to update goal status:', error);
-      alert(error.response?.data?.message || 'Ошибка при обновлении статуса');
+      alert(error.response?.data?.message || 'Error updating status');
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case 'completed':
-      case 'завершено':
         return 'success';
       case 'in_progress':
-      case 'в процессе':
         return 'primary';
-      case 'not started':
-      case 'не начато':
+      case 'not_started':
         return 'default';
       case 'blocked':
-      case 'заблокировано':
         return 'error';
       default:
         return 'default';
@@ -250,15 +246,15 @@ const GoalsPage = () => {
       >
         <Box>
           <Typography variant="h4" sx={{ fontWeight: 700 }}>
-            Управление целями
+            Goals Management
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Создавайте шаблоны, назначайте задачи и отслеживайте прогресс
+            Create templates, assign tasks and track progress
           </Typography>
         </Box>
         {isHR && (
           <Button variant="contained" startIcon={<Add />} onClick={() => handleOpenTemplateDialog()}>
-            Создать общую цель
+            Create Goal Template
           </Button>
         )}
       </Box>
@@ -266,8 +262,8 @@ const GoalsPage = () => {
       {isHR ? (
         <Paper>
           <Tabs value={tabValue} onChange={(_e, v) => setTabValue(v)}>
-            <Tab label="Общие цели" />
-            <Tab label="Назначения" />
+            <Tab label="Goal Templates" />
+            <Tab label="Assignments" />
           </Tabs>
           <Box p={3}>
             {tabValue === 0 && (
@@ -276,18 +272,18 @@ const GoalsPage = () => {
                   <Table>
                     <TableHead>
                       <TableRow>
-                        <TableCell>Название</TableCell>
-                        <TableCell>Описание</TableCell>
-                        <TableCell>Метрика</TableCell>
-                        <TableCell>Период ревью</TableCell>
-                        <TableCell align="right">Действия</TableCell>
+                        <TableCell>Title</TableCell>
+                        <TableCell>Description</TableCell>
+                        <TableCell>Metric</TableCell>
+                        <TableCell>Review Period</TableCell>
+                        <TableCell align="right">Actions</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
                       {goalTemplates.length === 0 ? (
                         <TableRow>
                           <TableCell colSpan={5} align="center">
-                            Нет общих целей. Создайте первую цель!
+                            No goal templates. Create your first goal!
                           </TableCell>
                         </TableRow>
                       ) : (
@@ -302,7 +298,7 @@ const GoalsPage = () => {
                                 size="small"
                                 color="primary"
                                 onClick={() => handleOpenAssignDialog(template)}
-                                title="Назначить сотруднику"
+                                title="Assign to Employee"
                               >
                                 <Assignment />
                               </IconButton>
@@ -332,27 +328,27 @@ const GoalsPage = () => {
             {tabValue === 1 && (
               <Box>
                 <Typography variant="h6" gutterBottom>
-                  Назначенные цели сотрудникам
+                  Assigned Goals to Employees
                 </Typography>
                 <TableContainer>
                   <Table>
                     <TableHead>
                       <TableRow>
-                        <TableCell>Сотрудник</TableCell>
-                        <TableCell>Название цели</TableCell>
-                        <TableCell>Описание</TableCell>
-                        <TableCell>Метрика</TableCell>
-                        <TableCell>Дата выполнения</TableCell>
-                        <TableCell>Статус</TableCell>
-                        <TableCell>Период ревью</TableCell>
-                        <TableCell align="right">Действия</TableCell>
+                        <TableCell>Employee</TableCell>
+                        <TableCell>Goal Title</TableCell>
+                        <TableCell>Description</TableCell>
+                        <TableCell>Metric</TableCell>
+                        <TableCell>Due Date</TableCell>
+                        <TableCell>Status</TableCell>
+                        <TableCell>Review Period</TableCell>
+                        <TableCell align="right">Actions</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
                       {goals.length === 0 ? (
                         <TableRow>
                           <TableCell colSpan={8} align="center">
-                            Нет назначенных целей. Назначьте цели сотрудникам через вкладку "Общие цели"
+                            No assigned goals. Assign goals to employees via the "Goal Templates" tab
                           </TableCell>
                         </TableRow>
                       ) : (
@@ -372,13 +368,13 @@ const GoalsPage = () => {
                                 size="small"
                                 color="error"
                                 onClick={async () => {
-                                  if (window.confirm('Вы уверены, что хотите удалить это назначение?')) {
+                                  if (window.confirm('Are you sure you want to delete this assignment?')) {
                                     try {
                                       await goalService.deleteGoalAssignment(goal.id);
                                       fetchData();
                                     } catch (error) {
-                                      console.error('Failed to delete goal assignment:', error);
-                                      alert('Ошибка при удалении назначения');
+                                      console.error('Failed to delete assignment:', error);
+                                      alert('Error deleting assignment');
                                     }
                                   }
                                 }}
@@ -402,20 +398,20 @@ const GoalsPage = () => {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Название</TableCell>
-                  <TableCell>Описание</TableCell>
-                  <TableCell>Метрика</TableCell>
-                  <TableCell>Дата выполнения</TableCell>
-                  <TableCell>Статус</TableCell>
-                  <TableCell>Период ревью</TableCell>
-                  <TableCell align="right">Действия</TableCell>
+                  <TableCell>Title</TableCell>
+                  <TableCell>Description</TableCell>
+                  <TableCell>Metric</TableCell>
+                  <TableCell>Due Date</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell>Review Period</TableCell>
+                  <TableCell align="right">Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {goals.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} align="center">
-                      У вас нет назначенных целей
+                      You have no assigned goals
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -434,7 +430,7 @@ const GoalsPage = () => {
                           size="small"
                           color="primary"
                           onClick={() => handleOpenStatusDialog(goal)}
-                          title="Изменить статус"
+                          title="Change Status"
                         >
                           <Edit />
                         </IconButton>
@@ -450,11 +446,11 @@ const GoalsPage = () => {
 
       {/* Template Dialog */}
       <Dialog open={openTemplateDialog} onClose={handleCloseTemplateDialog} maxWidth="md" fullWidth>
-        <DialogTitle>{editingTemplate ? 'Редактировать общую цель' : 'Создать общую цель'}</DialogTitle>
+        <DialogTitle>{editingTemplate ? 'Edit Goal Template' : 'Create Goal Template'}</DialogTitle>
         <DialogContent>
           <TextField
             fullWidth
-            label="Название"
+            label="Title"
             value={templateFormData.title}
             onChange={(e) => setTemplateFormData({ ...templateFormData, title: e.target.value })}
             margin="normal"
@@ -462,7 +458,7 @@ const GoalsPage = () => {
           />
           <TextField
             fullWidth
-            label="Описание"
+            label="Description"
             value={templateFormData.description}
             onChange={(e) => setTemplateFormData({ ...templateFormData, description: e.target.value })}
             margin="normal"
@@ -472,41 +468,41 @@ const GoalsPage = () => {
           />
           <TextField
             fullWidth
-            label="Метрика"
+            label="Metric"
             value={templateFormData.metric}
             onChange={(e) => setTemplateFormData({ ...templateFormData, metric: e.target.value })}
             margin="normal"
-            placeholder="например: Завершить 5 проектов, Увеличить продажи на 20%"
+            placeholder="e.g.: Complete 5 projects, Increase sales by 20%"
             required
           />
           <TextField
             fullWidth
-            label="Период ревью"
+            label="Review Period"
             value={templateFormData.reviewPeriod}
             onChange={(e) => setTemplateFormData({ ...templateFormData, reviewPeriod: e.target.value })}
             margin="normal"
-            placeholder="например: Q4-2024, 2024"
+            placeholder="e.g.: Q4-2024, 2024"
             required
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseTemplateDialog}>Отмена</Button>
+          <Button onClick={handleCloseTemplateDialog}>Cancel</Button>
           <Button onClick={handleSubmitTemplate} variant="contained" color="primary">
-            {editingTemplate ? 'Обновить' : 'Создать'}
+            {editingTemplate ? 'Update' : 'Create'}
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Assign Dialog */}
       <Dialog open={openAssignDialog} onClose={handleCloseAssignDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>Назначить цель сотруднику</DialogTitle>
+        <DialogTitle>Assign Goal to Employee</DialogTitle>
         <DialogContent>
           <FormControl fullWidth margin="normal">
-            <InputLabel>Сотрудник</InputLabel>
+            <InputLabel>Employee</InputLabel>
             <Select
               value={assignFormData.employeeId}
               onChange={(e) => setAssignFormData({ ...assignFormData, employeeId: Number(e.target.value) })}
-              label="Сотрудник"
+              label="Employee"
             >
               {employees.map((emp) => (
                 <MenuItem key={emp.id} value={emp.id}>
@@ -517,7 +513,7 @@ const GoalsPage = () => {
           </FormControl>
           <TextField
             fullWidth
-            label="Дата выполнения"
+            label="Due Date"
             type="date"
             value={assignFormData.dueDate}
             onChange={(e) => setAssignFormData({ ...assignFormData, dueDate: e.target.value })}
@@ -527,43 +523,43 @@ const GoalsPage = () => {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseAssignDialog}>Отмена</Button>
+          <Button onClick={handleCloseAssignDialog}>Cancel</Button>
           <Button onClick={handleSubmitAssign} variant="contained" color="primary">
-            Назначить
+            Assign
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Status Dialog */}
       <Dialog open={openStatusDialog} onClose={handleCloseStatusDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>Изменить статус цели</DialogTitle>
+        <DialogTitle>Change Goal Status</DialogTitle>
         <DialogContent>
           {selectedGoal && (
             <Box>
               <Typography variant="body2" color="text.secondary" gutterBottom>
-                Цель: {selectedGoal.goalTitle}
+                Goal: {selectedGoal.goalTitle}
               </Typography>
               <TextField
                 fullWidth
                 select
-                label="Статус"
+                label="Status"
                 value={statusFormData.status}
                 onChange={(e) => setStatusFormData({ status: e.target.value })}
                 margin="normal"
                 required
               >
-                <MenuItem value="not_started">Не начато</MenuItem>
-                <MenuItem value="in_progress">В процессе</MenuItem>
-                <MenuItem value="blocked">Заблокировано</MenuItem>
-                <MenuItem value="completed">Завершено</MenuItem>
+                <MenuItem value="not_started">Not Started</MenuItem>
+                <MenuItem value="in_progress">In Progress</MenuItem>
+                <MenuItem value="blocked">Blocked</MenuItem>
+                <MenuItem value="completed">Completed</MenuItem>
               </TextField>
             </Box>
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseStatusDialog}>Отмена</Button>
+          <Button onClick={handleCloseStatusDialog}>Cancel</Button>
           <Button onClick={handleSubmitStatus} variant="contained" color="primary">
-            Обновить
+            Update
           </Button>
         </DialogActions>
       </Dialog>
