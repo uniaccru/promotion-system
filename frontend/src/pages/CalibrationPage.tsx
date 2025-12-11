@@ -11,6 +11,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TablePagination,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -64,6 +65,10 @@ const CalibrationPage = () => {
   const [currentComparisonIndex, setCurrentComparisonIndex] = useState(0);
   const [ranking, setRanking] = useState<CandidateRanking | null>(null);
   const [tabValue, setTabValue] = useState(0);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(15);
+  const [pageRanking, setPageRanking] = useState(0);
+  const [rowsPerPageRanking, setRowsPerPageRanking] = useState(15);
   const { user } = useAuth();
   const userRole = user?.role?.toLowerCase() || '';
   const isHR = userRole === 'hr';
@@ -431,8 +436,9 @@ const CalibrationPage = () => {
           </Tabs>
           <Box p={3}>
             {tabValue === 0 && (
-              <TableContainer>
-                <Table>
+              <>
+                <TableContainer>
+                  <Table>
                   <TableHead>
                     <TableRow>
                       <TableCell>ID</TableCell>
@@ -445,7 +451,9 @@ const CalibrationPage = () => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {calibrations.map((cal) => (
+                    {calibrations
+                      .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                      .map((cal) => (
                       <TableRow key={cal.id}>
                         <TableCell>{cal.id}</TableCell>
                         <TableCell>{cal.gradeName || `Grade ${cal.gradeId}`}</TableCell>
@@ -479,6 +487,19 @@ const CalibrationPage = () => {
                   </TableBody>
                 </Table>
               </TableContainer>
+              <TablePagination
+                component="div"
+                count={calibrations.length}
+                page={page}
+                onPageChange={(_, newPage) => setPage(newPage)}
+                rowsPerPage={rowsPerPage}
+                onRowsPerPageChange={(e) => {
+                  setRowsPerPage(parseInt(e.target.value, 10));
+                  setPage(0);
+                }}
+                rowsPerPageOptions={[15, 25, 50]}
+              />
+              </>
             )}
             {tabValue === 1 && (
               <Box>
@@ -840,9 +861,11 @@ const CalibrationPage = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {ranking.rankings.map((candidate, index) => (
+                  {ranking.rankings
+                    .slice(pageRanking * rowsPerPageRanking, pageRanking * rowsPerPageRanking + rowsPerPageRanking)
+                    .map((candidate, index) => (
                     <TableRow key={candidate.employeeId}>
-                      <TableCell>{index + 1}</TableCell>
+                      <TableCell>{pageRanking * rowsPerPageRanking + index + 1}</TableCell>
                       <TableCell>{candidate.employeeName}</TableCell>
                       <TableCell>{candidate.requestedGradeName}</TableCell>
                       <TableCell>
@@ -894,6 +917,20 @@ const CalibrationPage = () => {
                 </TableBody>
               </Table>
             </TableContainer>
+          )}
+          {ranking && (
+            <TablePagination
+              component="div"
+              count={ranking.rankings.length}
+              page={pageRanking}
+              onPageChange={(_, newPage) => setPageRanking(newPage)}
+              rowsPerPage={rowsPerPageRanking}
+              onRowsPerPageChange={(e) => {
+                setRowsPerPageRanking(parseInt(e.target.value, 10));
+                setPageRanking(0);
+              }}
+              rowsPerPageOptions={[15, 25, 50]}
+            />
           )}
         </DialogContent>
         <DialogActions>

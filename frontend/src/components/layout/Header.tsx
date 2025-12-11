@@ -11,6 +11,10 @@ const Header = () => {
     navigate('/login');
   };
 
+  const handleProfileClick = () => {
+    navigate('/dashboard/profile');
+  };
+
   return (
     <AppBar position="static" elevation={0} sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
       <Toolbar>
@@ -19,6 +23,7 @@ const Header = () => {
         </Typography>
         <Stack direction="row" spacing={2} alignItems="center">
           <Avatar
+            onClick={handleProfileClick}
             sx={{
               bgcolor: 'primary.main',
               color: 'primary.contrastText',
@@ -26,6 +31,10 @@ const Header = () => {
               height: 36,
               fontSize: 16,
               fontWeight: 700,
+              cursor: 'pointer',
+              '&:hover': {
+                opacity: 0.8,
+              },
             }}
           >
             {user?.username?.[0]?.toUpperCase() || '?'}

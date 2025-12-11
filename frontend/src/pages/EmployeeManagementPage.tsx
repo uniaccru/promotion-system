@@ -11,6 +11,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TablePagination,
   CircularProgress,
   Chip,
 } from '@mui/material';
@@ -23,6 +24,8 @@ import { format } from 'date-fns';
 const EmployeeManagementPage = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(15);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -92,7 +95,9 @@ const EmployeeManagementPage = () => {
                 </TableCell>
               </TableRow>
             ) : (
-              employees.map((employee) => (
+              employees
+                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                .map((employee) => (
                 <TableRow key={employee.id} hover>
                   <TableCell>{employee.fullName}</TableCell>
                   <TableCell>{employee.email}</TableCell>
@@ -114,6 +119,18 @@ const EmployeeManagementPage = () => {
           </TableBody>
         </Table>
       </TableContainer>
+      <TablePagination
+        component="div"
+        count={employees.length}
+        page={page}
+        onPageChange={(_, newPage) => setPage(newPage)}
+        rowsPerPage={rowsPerPage}
+        onRowsPerPageChange={(e) => {
+          setRowsPerPage(parseInt(e.target.value, 10));
+          setPage(0);
+        }}
+        rowsPerPageOptions={[15, 25, 50]}
+      />
 
       <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
         Total Employees: {employees.length}

@@ -11,6 +11,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TablePagination,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -51,6 +52,8 @@ const PromotionRequestPage = () => {
   const [statusFilter, setStatusFilter] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [hrComment, setHrComment] = useState('');
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(15);
   const { user } = useAuth();
   const userRole = user?.role?.toLowerCase() || '';
   const isHR = userRole === 'hr';
@@ -513,7 +516,9 @@ const PromotionRequestPage = () => {
                 </TableCell>
               </TableRow>
             ) : (
-              filteredRequests.map((request) => (
+              filteredRequests
+                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                .map((request) => (
                 <TableRow key={request.id}>
                   <TableCell>{request.employeeName || `Employee #${request.employeeId}`}</TableCell>
                   <TableCell>{request.requestedGradeName || `Grade #${request.requestedGradeId}`}</TableCell>
@@ -594,6 +599,18 @@ const PromotionRequestPage = () => {
           </TableBody>
         </Table>
       </TableContainer>
+      <TablePagination
+        component="div"
+        count={filteredRequests.length}
+        page={page}
+        onPageChange={(_, newPage) => setPage(newPage)}
+        rowsPerPage={rowsPerPage}
+        onRowsPerPageChange={(e) => {
+          setRowsPerPage(parseInt(e.target.value, 10));
+          setPage(0);
+        }}
+        rowsPerPageOptions={[15, 25, 50]}
+      />
 
       {canCreateRequest && (
         <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>

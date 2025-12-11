@@ -11,6 +11,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TablePagination,
   IconButton,
   Dialog,
   DialogTitle,
@@ -44,6 +45,12 @@ const GoalsPage = () => {
   const [openStatusDialog, setOpenStatusDialog] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<GoalTemplate | null>(null);
   const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
+  const [pageTemplates, setPageTemplates] = useState(0);
+  const [rowsPerPageTemplates, setRowsPerPageTemplates] = useState(15);
+  const [pageAssignments, setPageAssignments] = useState(0);
+  const [rowsPerPageAssignments, setRowsPerPageAssignments] = useState(15);
+  const [pageGoals, setPageGoals] = useState(0);
+  const [rowsPerPageGoals, setRowsPerPageGoals] = useState(15);
   const { user } = useAuth();
   const isHR = user?.role?.toLowerCase() === 'hr';
 
@@ -287,7 +294,9 @@ const GoalsPage = () => {
                           </TableCell>
                         </TableRow>
                       ) : (
-                        goalTemplates.map((template) => (
+                        goalTemplates
+                          .slice(pageTemplates * rowsPerPageTemplates, pageTemplates * rowsPerPageTemplates + rowsPerPageTemplates)
+                          .map((template) => (
                           <TableRow key={template.id}>
                             <TableCell>{template.title}</TableCell>
                             <TableCell>{template.description}</TableCell>
@@ -323,6 +332,18 @@ const GoalsPage = () => {
                     </TableBody>
                   </Table>
                 </TableContainer>
+                <TablePagination
+                  component="div"
+                  count={goalTemplates.length}
+                  page={pageTemplates}
+                  onPageChange={(_, newPage) => setPageTemplates(newPage)}
+                  rowsPerPage={rowsPerPageTemplates}
+                  onRowsPerPageChange={(e) => {
+                    setRowsPerPageTemplates(parseInt(e.target.value, 10));
+                    setPageTemplates(0);
+                  }}
+                  rowsPerPageOptions={[15, 25, 50]}
+                />
               </Box>
             )}
             {tabValue === 1 && (
@@ -352,7 +373,9 @@ const GoalsPage = () => {
                           </TableCell>
                         </TableRow>
                       ) : (
-                        goals.map((goal) => (
+                        goals
+                          .slice(pageAssignments * rowsPerPageAssignments, pageAssignments * rowsPerPageAssignments + rowsPerPageAssignments)
+                          .map((goal) => (
                           <TableRow key={goal.id}>
                             <TableCell>{goal.employeeName || `ID: ${goal.employeeId}`}</TableCell>
                             <TableCell>{goal.goalTitle}</TableCell>
@@ -388,6 +411,18 @@ const GoalsPage = () => {
                     </TableBody>
                   </Table>
                 </TableContainer>
+                <TablePagination
+                  component="div"
+                  count={goals.length}
+                  page={pageAssignments}
+                  onPageChange={(_, newPage) => setPageAssignments(newPage)}
+                  rowsPerPage={rowsPerPageAssignments}
+                  onRowsPerPageChange={(e) => {
+                    setRowsPerPageAssignments(parseInt(e.target.value, 10));
+                    setPageAssignments(0);
+                  }}
+                  rowsPerPageOptions={[15, 25, 50]}
+                />
               </Box>
             )}
           </Box>
@@ -415,7 +450,9 @@ const GoalsPage = () => {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  goals.map((goal) => (
+                  goals
+                    .slice(pageGoals * rowsPerPageGoals, pageGoals * rowsPerPageGoals + rowsPerPageGoals)
+                    .map((goal) => (
                     <TableRow key={goal.id}>
                       <TableCell>{goal.goalTitle}</TableCell>
                       <TableCell>{goal.goalDescription}</TableCell>
@@ -441,6 +478,18 @@ const GoalsPage = () => {
               </TableBody>
             </Table>
           </TableContainer>
+          <TablePagination
+            component="div"
+            count={goals.length}
+            page={pageGoals}
+            onPageChange={(_, newPage) => setPageGoals(newPage)}
+            rowsPerPage={rowsPerPageGoals}
+            onRowsPerPageChange={(e) => {
+              setRowsPerPageGoals(parseInt(e.target.value, 10));
+              setPageGoals(0);
+            }}
+            rowsPerPageOptions={[15, 25, 50]}
+          />
         </Paper>
       )}
 

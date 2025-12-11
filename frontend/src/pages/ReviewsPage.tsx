@@ -11,6 +11,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TablePagination,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -40,6 +41,8 @@ const ReviewsPage = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [periodFilter, setPeriodFilter] = useState('');
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(15);
   const { user } = useAuth();
   const isHR = user?.role?.toLowerCase() === 'hr';
 
@@ -290,7 +293,9 @@ const ReviewsPage = () => {
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredReviews.map((review) => (
+                filteredReviews
+                  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                  .map((review) => (
                   <TableRow key={review.id} hover>
                     <TableCell>{review.reviewPeriod}</TableCell>
                     <TableCell>{review.employeeName || `Employee #${review.employeeId}`}</TableCell>
@@ -319,6 +324,18 @@ const ReviewsPage = () => {
             </TableBody>
           </Table>
         </TableContainer>
+        <TablePagination
+          component="div"
+          count={filteredReviews.length}
+          page={page}
+          onPageChange={(_, newPage) => setPage(newPage)}
+          rowsPerPage={rowsPerPage}
+          onRowsPerPageChange={(e) => {
+            setRowsPerPage(parseInt(e.target.value, 10));
+            setPage(0);
+          }}
+          rowsPerPageOptions={[15, 25, 50]}
+        />
       </Paper>
 
       {isHR && (
