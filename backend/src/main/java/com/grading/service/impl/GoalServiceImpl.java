@@ -6,6 +6,7 @@ import com.grading.dto.response.GoalResponse;
 import com.grading.entity.Employee;
 import com.grading.entity.Goal;
 import com.grading.entity.GoalAssignment;
+import com.grading.exception.ResourceNotFoundException;
 import com.grading.repository.EmployeeRepository;
 import com.grading.repository.GoalAssignmentRepository;
 import com.grading.repository.GoalRepository;
@@ -47,7 +48,7 @@ public class GoalServiceImpl implements GoalService {
     @Transactional
     public GoalResponse updateGoalStatus(Long id, UpdateGoalStatusRequest request) {
         GoalAssignment assignment = goalAssignmentRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Goal assignment not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Goal assignment", id));
 
         assignment.setStatus(request.getStatus());
 
@@ -64,7 +65,7 @@ public class GoalServiceImpl implements GoalService {
     @Override
     public GoalResponse getGoalAssignmentById(Long id) {
         GoalAssignment assignment = goalAssignmentRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Goal assignment not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Goal assignment", id));
         return toGoalResponse(assignment);
     }
 

@@ -7,6 +7,8 @@ import com.grading.entity.Employee;
 import com.grading.entity.Grade;
 import com.grading.entity.GradeHistory;
 import com.grading.entity.User;
+import com.grading.exception.BusinessLogicException;
+import com.grading.exception.ResourceNotFoundException;
 import com.grading.repository.EmployeeRepository;
 import com.grading.repository.GradeHistoryRepository;
 import com.grading.repository.GradeRepository;
@@ -40,9 +42,9 @@ public class AuthServiceImpl implements AuthService {
 
         String token = jwtTokenProvider.generateToken(authentication);
         User user = userRepository.findByUsername(request.getUsername())
-            .orElseThrow(() -> new RuntimeException("User not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("User", request.getUsername()));
         Employee employee = employeeRepository.findByUserId(user.getId())
-            .orElseThrow(() -> new RuntimeException("Employee not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Employee", user.getId()));
 
         return new AuthResponse(token, user.getId(), employee.getId(), user.getUsername(), employee.getRole());
     }
@@ -51,11 +53,11 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
-            throw new RuntimeException("Username already exists");
+            throw new BusinessLogicException("Username already exists");
         }
 
         Grade initialGrade = gradeRepository.findById(request.getInitialGradeId())
-            .orElseThrow(() -> new RuntimeException("Initial grade not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Grade", request.getInitialGradeId()));
 
         User user = new User();
         user.setUsername(request.getUsername());

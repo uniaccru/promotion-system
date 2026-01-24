@@ -1,0 +1,15 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+
+logging:
+  level:
+    com.grading: INFO
+    org.springframework.security: WARN
+    org.hibernate: WARN
+    root: INFO

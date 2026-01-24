@@ -9,6 +9,9 @@ import com.grading.entity.GradeHistory;
 import com.grading.entity.PromotionRequest;
 import com.grading.entity.PromotionRequestFile;
 import com.grading.entity.GoalAssignment;
+import com.grading.exception.BusinessLogicException;
+import com.grading.exception.ResourceNotFoundException;
+import com.grading.exception.ValidationException;
 import com.grading.model.PromotionRequestGoal;
 import com.grading.repository.EmployeeRepository;
 import com.grading.repository.GradeRepository;
@@ -19,6 +22,8 @@ import com.grading.repository.PromotionRequestGoalRepository;
 import com.grading.repository.PromotionRequestFileRepository;
 import com.grading.service.PromotionRequestService;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -34,12 +39,24 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class PromotionRequestServiceImpl implements PromotionRequestService {
+    private static final Logger logger = LoggerFactory.getLogger(PromotionRequestServiceImpl.class);
+    private static final Set<String> ALLOWED_CONTENT_TYPES = Set.of(
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "image/jpeg",
+        "image/png",
+        "text/plain"
+    );
+    private static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
     private final PromotionRequestRepository promotionRequestRepository;
     private final EmployeeRepository employeeRepository;
     private final GradeRepository gradeRepository;
@@ -55,15 +72,15 @@ public class PromotionRequestServiceImpl implements PromotionRequestService {
     @Transactional
     public PromotionRequestResponse createPromotionRequest(PromotionRequestRequest request, Long submittedById) {
         Employee employee = employeeRepository.findById(request.getEmployeeId())
-            .orElseThrow(() -> new RuntimeException("Employee not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Employee", request.getEmployeeId()));
         Grade requestedGrade = gradeRepository.findById(request.getRequestedGradeId())
-            .orElseThrow(() -> new RuntimeException("Grade not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Grade", request.getRequestedGradeId()));
         Employee submittedBy = employeeRepository.findById(submittedById)
-            .orElseThrow(() -> new RuntimeException("Submitter not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Employee", submittedById));
 
         List<String> activeStatuses = Arrays.asList("pending", "under_review", "ready_for_calibration", "in_calibration");
         if (promotionRequestRepository.existsActiveRequest(request.getEmployeeId(), request.getRequestedGradeId(), activeStatuses)) {
-            throw new RuntimeException("Active promotion request already exists for this employee and grade");
+            throw new BusinessLogicException("Active promotion request already exists for this employee and grade");
         }
 
         PromotionRequest promotionRequest = new PromotionRequest();
@@ -85,10 +102,10 @@ public class PromotionRequestServiceImpl implements PromotionRequestService {
     @Transactional
     public PromotionRequestResponse updatePromotionRequest(Long id, PromotionRequestRequest request) {
         PromotionRequest promotionRequest = promotionRequestRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Promotion request not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Promotion request", id));
         
         Grade requestedGrade = gradeRepository.findById(request.getRequestedGradeId())
-            .orElseThrow(() -> new RuntimeException("Grade not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Grade", request.getRequestedGradeId()));
         
         promotionRequest.setRequestedGrade(requestedGrade);
         promotionRequest.setJustification(request.getJustification());
@@ -108,9 +125,9 @@ public class PromotionRequestServiceImpl implements PromotionRequestService {
     @Transactional
     public PromotionRequestResponse updatePromotionRequestStatus(Long id, String status, Long changedById, String comment) {
         PromotionRequest promotionRequest = promotionRequestRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Promotion request not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Promotion request", id));
         Employee changedBy = employeeRepository.findById(changedById)
-            .orElseThrow(() -> new RuntimeException("User not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Employee", changedById));
 
         promotionRequest.setStatus(status);
         promotionRequest.setStatusChangedBy(changedBy);
@@ -127,14 +144,14 @@ public class PromotionRequestServiceImpl implements PromotionRequestService {
     @Transactional
     public PromotionRequestResponse approveOrRejectPromotion(Long id, String decision, String comment, Long approvedById) {
         PromotionRequest promotionRequest = promotionRequestRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Promotion request not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Promotion request", id));
         
         Employee approvedBy = employeeRepository.findById(approvedById)
-            .orElseThrow(() -> new RuntimeException("Approver not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Employee", approvedById));
 
         // Проверяем, что заявка находится в статусе calibration_completed
         if (!"calibration_completed".equalsIgnoreCase(promotionRequest.getStatus())) {
-            throw new RuntimeException("Promotion request must be in 'calibration_completed' status to approve or reject");
+            throw new BusinessLogicException("Promotion request must be in 'calibration_completed' status to approve or reject");
         }
 
         if ("approved".equalsIgnoreCase(decision)) {
@@ -163,7 +180,7 @@ public class PromotionRequestServiceImpl implements PromotionRequestService {
             promotionRequest.setStatusChangedBy(approvedBy);
             promotionRequest.setHrComment(comment != null ? comment : "Rejected");
         } else {
-            throw new RuntimeException("Invalid decision. Must be 'approved' or 'rejected'");
+            throw new ValidationException("Invalid decision. Must be 'approved' or 'rejected'");
         }
 
         PromotionRequest saved = promotionRequestRepository.save(promotionRequest);
@@ -174,7 +191,7 @@ public class PromotionRequestServiceImpl implements PromotionRequestService {
     @Transactional
     public void deletePromotionRequest(Long id) {
         if (!promotionRequestRepository.existsById(id)) {
-            throw new RuntimeException("Promotion request not found");
+            throw new ResourceNotFoundException("Promotion request", id);
         }
         promotionRequestRepository.deleteById(id);
     }
@@ -182,7 +199,7 @@ public class PromotionRequestServiceImpl implements PromotionRequestService {
     @Override
     public PromotionRequestResponse getPromotionRequestById(Long id) {
         PromotionRequest promotionRequest = promotionRequestRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Promotion request not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Promotion request", id));
         return toPromotionRequestResponse(promotionRequest);
     }
 
@@ -229,20 +246,20 @@ public class PromotionRequestServiceImpl implements PromotionRequestService {
     @Transactional
     public void attachGoalsToPromotionRequest(Long promotionRequestId, List<Long> goalAssignmentIds) {
         PromotionRequest promotionRequest = promotionRequestRepository.findById(promotionRequestId)
-            .orElseThrow(() -> new RuntimeException("Promotion request not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Promotion request", promotionRequestId));
 
         for (Long goalAssignmentId : goalAssignmentIds) {
             GoalAssignment goalAssignment = goalAssignmentRepository.findById(goalAssignmentId)
-                .orElseThrow(() -> new RuntimeException("Goal assignment not found: " + goalAssignmentId));
+                .orElseThrow(() -> new ResourceNotFoundException("Goal assignment", goalAssignmentId));
 
             // Verify that the goal assignment belongs to the same employee
             if (!goalAssignment.getEmployee().getId().equals(promotionRequest.getEmployee().getId())) {
-                throw new RuntimeException("Goal assignment does not belong to the employee");
+                throw new BusinessLogicException("Goal assignment does not belong to the employee");
             }
 
             // Verify that the goal is completed
             if (!"completed".equalsIgnoreCase(goalAssignment.getStatus())) {
-                throw new RuntimeException("Only completed goals can be attached to promotion requests");
+                throw new BusinessLogicException("Only completed goals can be attached to promotion requests");
             }
 
             PromotionRequestGoal prGoal = new PromotionRequestGoal();
@@ -264,22 +281,36 @@ public class PromotionRequestServiceImpl implements PromotionRequestService {
     @Transactional
     public PromotionRequestFileResponse uploadFile(Long promotionRequestId, MultipartFile file) {
         PromotionRequest promotionRequest = promotionRequestRepository.findById(promotionRequestId)
-            .orElseThrow(() -> new RuntimeException("Promotion request not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Promotion request", promotionRequestId));
+
+        // Validate file
+        validateFile(file);
 
         try {
             // Create upload directory if it doesn't exist
-            Path uploadPath = Paths.get(uploadDir);
+            Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
             if (!Files.exists(uploadPath)) {
                 Files.createDirectories(uploadPath);
             }
 
             // Generate unique filename
             String originalFilename = file.getOriginalFilename();
-            String extension = originalFilename != null && originalFilename.contains(".") 
-                ? originalFilename.substring(originalFilename.lastIndexOf(".")) 
+            if (originalFilename == null || originalFilename.trim().isEmpty()) {
+                throw new ValidationException("File name cannot be empty");
+            }
+
+            // Sanitize filename to prevent path traversal
+            String sanitizedFilename = sanitizeFilename(originalFilename);
+            String extension = sanitizedFilename.contains(".") 
+                ? sanitizedFilename.substring(sanitizedFilename.lastIndexOf(".")) 
                 : "";
             String uniqueFilename = UUID.randomUUID().toString() + extension;
-            Path filePath = uploadPath.resolve(uniqueFilename);
+            Path filePath = uploadPath.resolve(uniqueFilename).normalize();
+
+            // Additional security check: ensure the resolved path is still within upload directory
+            if (!filePath.startsWith(uploadPath)) {
+                throw new ValidationException("Invalid file path");
+            }
 
             // Save file
             Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
@@ -287,16 +318,40 @@ public class PromotionRequestServiceImpl implements PromotionRequestService {
             // Save file info to database
             PromotionRequestFile fileEntity = new PromotionRequestFile();
             fileEntity.setPromotionRequest(promotionRequest);
-            fileEntity.setFileName(originalFilename);
+            fileEntity.setFileName(sanitizedFilename);
             fileEntity.setFilePath(uniqueFilename);
             fileEntity.setFileSize(file.getSize());
             fileEntity.setContentType(file.getContentType());
             promotionRequestFileRepository.save(fileEntity);
 
+            logger.info("File uploaded successfully: {} for promotion request {}", uniqueFilename, promotionRequestId);
             return toFileResponse(fileEntity);
         } catch (IOException e) {
-            throw new RuntimeException("Failed to upload file: " + e.getMessage(), e);
+            logger.error("Failed to upload file for promotion request {}", promotionRequestId, e);
+            throw new BusinessLogicException("Failed to upload file: " + e.getMessage(), e);
         }
+    }
+
+    private void validateFile(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new ValidationException("File cannot be empty");
+        }
+
+        if (file.getSize() > MAX_FILE_SIZE) {
+            throw new ValidationException("File size exceeds maximum allowed size of " + (MAX_FILE_SIZE / 1024 / 1024) + "MB");
+        }
+
+        String contentType = file.getContentType();
+        if (contentType == null || !ALLOWED_CONTENT_TYPES.contains(contentType)) {
+            throw new ValidationException("File type not allowed. Allowed types: PDF, DOC, DOCX, JPEG, PNG, TXT");
+        }
+    }
+
+    private String sanitizeFilename(String filename) {
+        // Remove path traversal attempts and dangerous characters
+        return filename.replaceAll("[\\.]{2,}", "")
+                      .replaceAll("[\\\\/:*?\"<>|]", "_")
+                      .trim();
     }
 
     @Override
@@ -310,40 +365,57 @@ public class PromotionRequestServiceImpl implements PromotionRequestService {
     @Override
     public Resource downloadFile(Long fileId) {
         PromotionRequestFile file = promotionRequestFileRepository.findById(fileId)
-            .orElseThrow(() -> new RuntimeException("File not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("File", fileId));
 
         try {
-            Path filePath = Paths.get(uploadDir).resolve(file.getFilePath()).normalize();
+            Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
+            Path filePath = uploadPath.resolve(file.getFilePath()).normalize();
+            
+            // Security check: ensure the resolved path is still within upload directory
+            if (!filePath.startsWith(uploadPath)) {
+                throw new ValidationException("Invalid file path");
+            }
+            
             Resource resource = new UrlResource(filePath.toUri());
             
             if (resource.exists() && resource.isReadable()) {
                 return resource;
             } else {
-                throw new RuntimeException("File not found or not readable: " + file.getFileName());
+                throw new ResourceNotFoundException("File not found or not readable: " + file.getFileName());
             }
         } catch (MalformedURLException e) {
-            throw new RuntimeException("File not found: " + file.getFileName(), e);
+            logger.error("Failed to download file {}", fileId, e);
+            throw new BusinessLogicException("File not found: " + file.getFileName(), e);
         }
     }
 
     @Override
     public PromotionRequestFile getFileById(Long fileId) {
         return promotionRequestFileRepository.findById(fileId)
-            .orElseThrow(() -> new RuntimeException("File not found with id: " + fileId));
+            .orElseThrow(() -> new ResourceNotFoundException("File", fileId));
     }
 
     @Override
     @Transactional
     public void deleteFile(Long fileId) {
         PromotionRequestFile file = promotionRequestFileRepository.findById(fileId)
-            .orElseThrow(() -> new RuntimeException("File not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("File", fileId));
 
         try {
-            Path filePath = Paths.get(uploadDir).resolve(file.getFilePath()).normalize();
+            Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
+            Path filePath = uploadPath.resolve(file.getFilePath()).normalize();
+            
+            // Security check: ensure the resolved path is still within upload directory
+            if (!filePath.startsWith(uploadPath)) {
+                throw new ValidationException("Invalid file path");
+            }
+            
             Files.deleteIfExists(filePath);
             promotionRequestFileRepository.deleteById(fileId);
+            logger.info("File deleted successfully: {}", fileId);
         } catch (IOException e) {
-            throw new RuntimeException("Failed to delete file: " + e.getMessage(), e);
+            logger.error("Failed to delete file {}", fileId, e);
+            throw new BusinessLogicException("Failed to delete file: " + e.getMessage(), e);
         }
     }
 

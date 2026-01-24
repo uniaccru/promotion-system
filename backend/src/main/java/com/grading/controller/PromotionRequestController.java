@@ -8,12 +8,12 @@ import com.grading.dto.response.PromotionRequestResponse;
 import com.grading.dto.response.PromotionRequestFileResponse;
 import com.grading.entity.Employee;
 import com.grading.entity.PromotionRequestFile;
+import com.grading.exception.ForbiddenException;
 import com.grading.model.PromotionRequestGoal;
-import com.grading.repository.EmployeeRepository;
 import com.grading.repository.PromotionRequestGoalRepository;
-import com.grading.repository.UserRepository;
 import com.grading.service.PromotionRequestService;
 import com.grading.service.GoalService;
+import com.grading.util.SecurityUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -39,8 +39,7 @@ import java.util.stream.Collectors;
 @Tag(name = "Promotion Requests", description = "Управление заявками на повышение")
 public class PromotionRequestController {
     private final PromotionRequestService promotionRequestService;
-    private final EmployeeRepository employeeRepository;
-    private final UserRepository userRepository;
+    private final SecurityUtils securityUtils;
     private final PromotionRequestGoalRepository promotionRequestGoalRepository;
     private final GoalService goalService;
 
@@ -52,17 +51,15 @@ public class PromotionRequestController {
     public ResponseEntity<ApiResponse<PromotionRequestResponse>> createPromotionRequest(
             @Valid @RequestBody PromotionRequestRequest request,
             Authentication authentication) {
-        Employee currentEmployee = getCurrentEmployee(authentication);
+        Employee currentEmployee = securityUtils.getCurrentEmployee(authentication);
         
         String role = currentEmployee.getRole().toLowerCase();
         if (!role.equals("employee") && !role.equals("team_lead")) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(ApiResponse.error("Only employees and team leads can create promotion requests"));
+            throw new ForbiddenException("Only employees and team leads can create promotion requests");
         }
         
         if (!request.getEmployeeId().equals(currentEmployee.getId())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(ApiResponse.error("You can only create promotion requests for yourself"));
+            throw new ForbiddenException("You can only create promotion requests for yourself");
         }
         
         PromotionRequestResponse promotionRequest = promotionRequestService.createPromotionRequest(request, currentEmployee.getId());
@@ -78,19 +75,17 @@ public class PromotionRequestController {
             @PathVariable Long id,
             @Valid @RequestBody PromotionRequestRequest request,
             Authentication authentication) {
-        Employee currentEmployee = getCurrentEmployee(authentication);
+        Employee currentEmployee = securityUtils.getCurrentEmployee(authentication);
         
         PromotionRequestResponse existing = promotionRequestService.getPromotionRequestById(id);
         
         if (!existing.getEmployeeId().equals(currentEmployee.getId())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(ApiResponse.error("You can only update your own promotion requests"));
+            throw new ForbiddenException("You can only update your own promotion requests");
         }
         
         if (!"pending".equalsIgnoreCase(existing.getStatus()) && 
             !"returned_for_revision".equalsIgnoreCase(existing.getStatus())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(ApiResponse.error("You can only update promotion requests in pending or returned_for_revision status"));
+            throw new ForbiddenException("You can only update promotion requests in pending or returned_for_revision status");
         }
         
         PromotionRequestResponse updated = promotionRequestService.updatePromotionRequest(id, request);
@@ -105,19 +100,17 @@ public class PromotionRequestController {
     public ResponseEntity<ApiResponse<Void>> deletePromotionRequest(
             @PathVariable Long id,
             Authentication authentication) {
-        Employee currentEmployee = getCurrentEmployee(authentication);
+        Employee currentEmployee = securityUtils.getCurrentEmployee(authentication);
         
         PromotionRequestResponse existing = promotionRequestService.getPromotionRequestById(id);
         
         if (!existing.getEmployeeId().equals(currentEmployee.getId())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(ApiResponse.error("You can only delete your own promotion requests"));
+            throw new ForbiddenException("You can only delete your own promotion requests");
         }
         
         if (!"pending".equalsIgnoreCase(existing.getStatus()) && 
             !"returned_for_revision".equalsIgnoreCase(existing.getStatus())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(ApiResponse.error("You can only delete promotion requests in pending or returned_for_revision status"));
+            throw new ForbiddenException("You can only delete promotion requests in pending or returned_for_revision status");
         }
         
         promotionRequestService.deletePromotionRequest(id);
@@ -134,16 +127,14 @@ public class PromotionRequestController {
             @RequestParam String status,
             @RequestParam(required = false) String comment,
             Authentication authentication) {
-        Employee currentEmployee = getCurrentEmployee(authentication);
+        Employee currentEmployee = securityUtils.getCurrentEmployee(authentication);
         
         if (!"hr".equalsIgnoreCase(currentEmployee.getRole())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(ApiResponse.error("Only HR can update promotion request status"));
+            throw new ForbiddenException("Only HR can update promotion request status");
         }
         
         if ("returned_for_revision".equalsIgnoreCase(status) && (comment == null || comment.trim().isEmpty())) {
-            return ResponseEntity.badRequest()
-                .body(ApiResponse.error("Comment is required when returning for revision"));
+            throw new com.grading.exception.ValidationException("Comment is required when returning for revision");
         }
         
         PromotionRequestResponse promotionRequest = promotionRequestService.updatePromotionRequestStatus(id, status, currentEmployee.getId(), comment);
@@ -158,13 +149,12 @@ public class PromotionRequestController {
     public ResponseEntity<ApiResponse<PromotionRequestResponse>> getPromotionRequestById(
             @PathVariable Long id,
             Authentication authentication) {
-        Employee currentEmployee = getCurrentEmployee(authentication);
+        Employee currentEmployee = securityUtils.getCurrentEmployee(authentication);
         PromotionRequestResponse promotionRequest = promotionRequestService.getPromotionRequestById(id);
         
         if ("employee".equalsIgnoreCase(currentEmployee.getRole()) && 
             !promotionRequest.getEmployeeId().equals(currentEmployee.getId())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(ApiResponse.error("You can only view your own promotion requests"));
+            throw new ForbiddenException("You can only view your own promotion requests");
         }
         
         return ResponseEntity.ok(ApiResponse.success(promotionRequest));
@@ -178,12 +168,11 @@ public class PromotionRequestController {
     public ResponseEntity<ApiResponse<List<PromotionRequestResponse>>> getPromotionRequestsByEmployeeId(
             @PathVariable Long employeeId,
             Authentication authentication) {
-        Employee currentEmployee = getCurrentEmployee(authentication);
+        Employee currentEmployee = securityUtils.getCurrentEmployee(authentication);
         
         if ("employee".equalsIgnoreCase(currentEmployee.getRole()) && 
             !employeeId.equals(currentEmployee.getId())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(ApiResponse.error("You can only view your own promotion requests"));
+            throw new ForbiddenException("You can only view your own promotion requests");
         }
         
         List<PromotionRequestResponse> promotionRequests = promotionRequestService.getPromotionRequestsByEmployeeId(employeeId);
@@ -197,11 +186,10 @@ public class PromotionRequestController {
     )
     public ResponseEntity<ApiResponse<List<PromotionRequestResponse>>> getAllPromotionRequests(
             Authentication authentication) {
-        Employee currentEmployee = getCurrentEmployee(authentication);
+        Employee currentEmployee = securityUtils.getCurrentEmployee(authentication);
         
         if (!"hr".equalsIgnoreCase(currentEmployee.getRole())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(ApiResponse.error("Only HR can view all promotion requests"));
+            throw new ForbiddenException("Only HR can view all promotion requests");
         }
         
         List<PromotionRequestResponse> promotionRequests = promotionRequestService.getAllPromotionRequests();
@@ -216,11 +204,10 @@ public class PromotionRequestController {
     public ResponseEntity<ApiResponse<List<PromotionRequestResponse>>> getPromotionRequestsByStatus(
             @PathVariable String status,
             Authentication authentication) {
-        Employee currentEmployee = getCurrentEmployee(authentication);
+        Employee currentEmployee = securityUtils.getCurrentEmployee(authentication);
         
         if (!"hr".equalsIgnoreCase(currentEmployee.getRole())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(ApiResponse.error("Only HR can filter promotion requests by status"));
+            throw new ForbiddenException("Only HR can filter promotion requests by status");
         }
         
         List<PromotionRequestResponse> promotionRequests = promotionRequestService.getPromotionRequestsByStatus(status);
@@ -236,11 +223,10 @@ public class PromotionRequestController {
             @PathVariable Long id,
             @Valid @RequestBody ApprovePromotionRequest request,
             Authentication authentication) {
-        Employee currentEmployee = getCurrentEmployee(authentication);
+        Employee currentEmployee = securityUtils.getCurrentEmployee(authentication);
         
         if (!"hr".equalsIgnoreCase(currentEmployee.getRole())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(ApiResponse.error("Only HR can approve or reject promotion requests"));
+            throw new ForbiddenException("Only HR can approve or reject promotion requests");
         }
         
         PromotionRequestResponse promotionRequest = promotionRequestService.approveOrRejectPromotion(
@@ -266,13 +252,12 @@ public class PromotionRequestController {
             @PathVariable Long id,
             @RequestBody List<Long> goalAssignmentIds,
             Authentication authentication) {
-        Employee currentEmployee = getCurrentEmployee(authentication);
+        Employee currentEmployee = securityUtils.getCurrentEmployee(authentication);
         
         // Verify that the employee owns this promotion request
         PromotionRequestResponse pr = promotionRequestService.getPromotionRequestById(id);
         if (!pr.getEmployeeId().equals(currentEmployee.getId())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(ApiResponse.error("You can only attach goals to your own promotion requests"));
+            throw new ForbiddenException("You can only attach goals to your own promotion requests");
         }
         
         promotionRequestService.attachGoalsToPromotionRequest(id, goalAssignmentIds);
@@ -288,13 +273,12 @@ public class PromotionRequestController {
             @PathVariable Long id,
             @PathVariable Long goalAssignmentId,
             Authentication authentication) {
-        Employee currentEmployee = getCurrentEmployee(authentication);
+        Employee currentEmployee = securityUtils.getCurrentEmployee(authentication);
         
         // Verify that the employee owns this promotion request
         PromotionRequestResponse pr = promotionRequestService.getPromotionRequestById(id);
         if (!pr.getEmployeeId().equals(currentEmployee.getId())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(ApiResponse.error("You can only detach goals from your own promotion requests"));
+            throw new ForbiddenException("You can only detach goals from your own promotion requests");
         }
         
         promotionRequestService.detachGoalFromPromotionRequest(id, goalAssignmentId);
@@ -323,12 +307,11 @@ public class PromotionRequestController {
             @PathVariable Long id,
             @RequestParam("file") MultipartFile file,
             Authentication authentication) {
-        Employee currentEmployee = getCurrentEmployee(authentication);
+        Employee currentEmployee = securityUtils.getCurrentEmployee(authentication);
         
         PromotionRequestResponse pr = promotionRequestService.getPromotionRequestById(id);
         if (!pr.getEmployeeId().equals(currentEmployee.getId())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(ApiResponse.error("You can only upload files to your own promotion requests"));
+            throw new ForbiddenException("You can only upload files to your own promotion requests");
         }
         
         PromotionRequestFileResponse fileResponse = promotionRequestService.uploadFile(id, file);
@@ -371,20 +354,17 @@ public class PromotionRequestController {
     public ResponseEntity<ApiResponse<String>> deleteFile(
             @PathVariable Long fileId,
             Authentication authentication) {
-        Employee currentEmployee = getCurrentEmployee(authentication);
+        Employee currentEmployee = securityUtils.getCurrentEmployee(authentication);
         
-        // TODO: Add permission check
+        // Verify that the employee owns the promotion request associated with this file
+        PromotionRequestFile fileEntity = promotionRequestService.getFileById(fileId);
+        PromotionRequestResponse pr = promotionRequestService.getPromotionRequestById(fileEntity.getPromotionRequest().getId());
+        
+        if (!pr.getEmployeeId().equals(currentEmployee.getId()) && !"hr".equalsIgnoreCase(currentEmployee.getRole())) {
+            throw new ForbiddenException("You can only delete files from your own promotion requests");
+        }
         
         promotionRequestService.deleteFile(fileId);
         return ResponseEntity.ok(ApiResponse.success("File deleted successfully"));
-    }
-
-    private Employee getCurrentEmployee(Authentication authentication) {
-        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-        String username = userDetails.getUsername();
-        
-        return userRepository.findByUsername(username)
-            .flatMap(user -> employeeRepository.findByUserId(user.getId()))
-            .orElseThrow(() -> new RuntimeException("Employee not found for user: " + username));
     }
 }

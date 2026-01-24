@@ -4,6 +4,8 @@ import com.grading.dto.request.CreateCalibrationPackageRequest;
 import com.grading.dto.response.CalibrationResponse;
 import com.grading.dto.response.CandidateRankingResponse;
 import com.grading.entity.*;
+import com.grading.exception.BusinessLogicException;
+import com.grading.exception.ResourceNotFoundException;
 import com.grading.repository.*;
 import com.grading.service.CalibrationService;
 import lombok.RequiredArgsConstructor;
@@ -43,7 +45,7 @@ public class CalibrationServiceImpl implements CalibrationService {
     @Transactional
     public Calibration updateCalibrationStatus(Long id, String status) {
         Calibration calibration = calibrationRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Calibration not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Calibration", id));
 
         calibration.setStatus(status);
         return calibrationRepository.save(calibration);
@@ -52,7 +54,7 @@ public class CalibrationServiceImpl implements CalibrationService {
     @Override
     public Calibration getCalibrationById(Long id) {
         return calibrationRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Calibration not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Calibration", id));
     }
 
     @Override
@@ -69,42 +71,42 @@ public class CalibrationServiceImpl implements CalibrationService {
     @Transactional
     public CalibrationResponse createCalibrationPackage(CreateCalibrationPackageRequest request, Long createdById) {
         Grade grade = gradeRepository.findById(request.getGradeId())
-            .orElseThrow(() -> new RuntimeException("Grade not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Grade", request.getGradeId()));
 
         Employee createdBy = employeeRepository.findById(createdById)
-            .orElseThrow(() -> new RuntimeException("Creator not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Employee", createdById));
 
         if (request.getPromotionRequestIds().size() < 3) {
-            throw new RuntimeException("At least 3 promotion requests are required");
+            throw new BusinessLogicException("At least 3 promotion requests are required");
         }
 
         List<PromotionRequest> promotionRequests = request.getPromotionRequestIds().stream()
             .map(id -> promotionRequestRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Promotion request not found: " + id)))
+                .orElseThrow(() -> new ResourceNotFoundException("Promotion request", id)))
             .collect(Collectors.toList());
 
         for (PromotionRequest pr : promotionRequests) {
             if (!pr.getRequestedGrade().getId().equals(request.getGradeId())) {
-                throw new RuntimeException("All promotion requests must be for the same grade");
+                throw new BusinessLogicException("All promotion requests must be for the same grade");
             }
             String status = pr.getStatus();
             if (!status.equals("ready_for_calibration") && 
                 !status.equals("pending") && 
                 !status.equals("under_review")) {
-                throw new RuntimeException("Promotion request " + pr.getId() + " is not ready for calibration (status: " + status + ")");
+                throw new BusinessLogicException("Promotion request " + pr.getId() + " is not ready for calibration (status: " + status + ")");
             }
             if (pr.getCalibration() != null) {
-                throw new RuntimeException("Promotion request " + pr.getId() + " is already in a calibration");
+                throw new BusinessLogicException("Promotion request " + pr.getId() + " is already in a calibration");
             }
         }
 
         if (request.getEvaluatorIds().size() != 2) {
-            throw new RuntimeException("Exactly 2 evaluators are required");
+            throw new BusinessLogicException("Exactly 2 evaluators are required");
         }
 
         List<Employee> evaluators = request.getEvaluatorIds().stream()
             .map(id -> employeeRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Evaluator not found: " + id)))
+                .orElseThrow(() -> new ResourceNotFoundException("Employee", id)))
             .collect(Collectors.toList());
 
         Calibration calibration = new Calibration();
@@ -112,6 +114,8 @@ public class CalibrationServiceImpl implements CalibrationService {
         calibration.setCreatedBy(createdBy);
         calibration.setStatus("planning");
         calibration = calibrationRepository.save(calibration);
+        
+        final Long calibrationId = calibration.getId();
 
         for (PromotionRequest pr : promotionRequests) {
             pr.setCalibration(calibration);
@@ -126,8 +130,8 @@ public class CalibrationServiceImpl implements CalibrationService {
             calibrationEvaluatorRepository.save(ce);
         }
 
-        Calibration savedCalibration = calibrationRepository.findById(calibration.getId())
-            .orElseThrow(() -> new RuntimeException("Calibration not found after save"));
+        Calibration savedCalibration = calibrationRepository.findById(calibrationId)
+            .orElseThrow(() -> new ResourceNotFoundException("Calibration", calibrationId));
         
         return toCalibrationResponse(savedCalibration);
     }
@@ -148,13 +152,8 @@ public class CalibrationServiceImpl implements CalibrationService {
     @Override
     public List<CalibrationResponse> getCalibrationsByEvaluatorId(Long evaluatorId) {
         List<CalibrationEvaluator> evaluatorCalibrations = calibrationEvaluatorRepository.findByEvaluatorId(evaluatorId);
-        System.out.println("Found " + evaluatorCalibrations.size() + " calibrations for evaluator " + evaluatorId);
         return evaluatorCalibrations.stream()
-            .map(ce -> {
-                Calibration cal = ce.getCalibration();
-                System.out.println("Processing calibration " + cal.getId() + " for evaluator " + evaluatorId);
-                return toCalibrationResponse(cal);
-            })
+            .map(ce -> toCalibrationResponse(ce.getCalibration()))
             .collect(Collectors.toList());
     }
 

@@ -5,6 +5,7 @@ import com.grading.dto.response.EmployeeResponse;
 import com.grading.entity.Employee;
 import com.grading.entity.GradeHistory;
 import com.grading.entity.ManagerEvaluation;
+import com.grading.exception.ResourceNotFoundException;
 import com.grading.repository.EmployeeRepository;
 import com.grading.repository.GradeHistoryRepository;
 import com.grading.repository.ManagerEvaluationRepository;
@@ -25,7 +26,7 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Override
     public EmployeeProfileResponse getEmployeeProfile(Long employeeId) {
         Employee employee = employeeRepository.findById(employeeId)
-            .orElseThrow(() -> new RuntimeException("Employee not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Employee", employeeId));
 
         GradeHistory latestGrade = gradeHistoryRepository.findLatestByEmployeeId(employeeId).orElse(null);
         ManagerEvaluation latestEvaluation = managerEvaluationRepository.findLatestByEmployeeId(employeeId).orElse(null);
@@ -57,7 +58,7 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Override
     public EmployeeResponse getEmployeeById(Long id) {
         Employee employee = employeeRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Employee not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Employee", id));
         return toEmployeeResponse(employee);
     }
 

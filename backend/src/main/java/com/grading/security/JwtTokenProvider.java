@@ -1,7 +1,10 @@
 package com.grading.security;
 
+import com.grading.exception.ValidationException;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -12,6 +15,9 @@ import java.util.Date;
 
 @Component
 public class JwtTokenProvider {
+    private static final Logger logger = LoggerFactory.getLogger(JwtTokenProvider.class);
+    private static final int MIN_SECRET_LENGTH = 32;
+
     @Value("${jwt.secret}")
     private String jwtSecret;
 
@@ -19,6 +25,10 @@ public class JwtTokenProvider {
     private long jwtExpiration;
 
     private SecretKey getSigningKey() {
+        if (jwtSecret == null || jwtSecret.length() < MIN_SECRET_LENGTH) {
+            logger.error("JWT secret is too short or not set. Minimum length is {} characters", MIN_SECRET_LENGTH);
+            throw new ValidationException("JWT secret must be at least " + MIN_SECRET_LENGTH + " characters long");
+        }
         return Keys.hmacShaKeyFor(jwtSecret.getBytes());
     }
 

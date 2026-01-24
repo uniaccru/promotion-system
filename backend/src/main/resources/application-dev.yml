@@ -1,0 +1,14 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+logging:
+  level:
+    com.grading: DEBUG
+    org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG

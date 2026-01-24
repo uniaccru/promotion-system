@@ -5,9 +5,9 @@ import com.grading.dto.request.RegisterRequest;
 import com.grading.dto.response.ApiResponse;
 import com.grading.dto.response.AuthResponse;
 import com.grading.entity.Employee;
-import com.grading.repository.EmployeeRepository;
-import com.grading.repository.UserRepository;
+import com.grading.exception.ForbiddenException;
 import com.grading.service.AuthService;
+import com.grading.util.SecurityUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -19,7 +19,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -28,8 +27,7 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "Authentication", description = "Аутентификация и регистрация пользователей")
 public class AuthController {
     private final AuthService authService;
-    private final EmployeeRepository employeeRepository;
-    private final UserRepository userRepository;
+    private final SecurityUtils securityUtils;
 
     @PostMapping("/login")
     @Operation(
@@ -75,31 +73,26 @@ public class AuthController {
     public ResponseEntity<ApiResponse<AuthResponse>> register(
             @Valid @RequestBody RegisterRequest request,
             Authentication authentication) {
-        if (authentication != null && authentication.isAuthenticated() && !(authentication.getPrincipal() instanceof String)) {
+        boolean isAuthenticatedHR = false;
+        
+        if (authentication != null && authentication.isAuthenticated()) {
             try {
-                Employee currentEmployee = getCurrentEmployee(authentication);
+                Employee currentEmployee = securityUtils.getCurrentEmployee(authentication);
                 if (!"hr".equalsIgnoreCase(currentEmployee.getRole())) {
-                    return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(ApiResponse.error("Only HR can register new employees"));
+                    throw new ForbiddenException("Only HR can register new employees");
                 }
-            } catch (Exception e) {
+                isAuthenticatedHR = true;
+            } catch (com.grading.exception.ResourceNotFoundException e) {
+                // If employee not found, treat as not authenticated
             }
         }
-        else if (!"hr".equalsIgnoreCase(request.getRole())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(ApiResponse.error("Self-registration is only available for HR role"));
+        
+        // If not authenticated as HR, only allow self-registration as HR
+        if (!isAuthenticatedHR && !"hr".equalsIgnoreCase(request.getRole())) {
+            throw new ForbiddenException("Self-registration is only available for HR role");
         }
         
         AuthResponse response = authService.register(request);
         return ResponseEntity.ok(ApiResponse.success("Registration successful", response));
-    }
-
-    private Employee getCurrentEmployee(Authentication authentication) {
-        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-        String username = userDetails.getUsername();
-        
-        return userRepository.findByUsername(username)
-            .flatMap(user -> employeeRepository.findByUserId(user.getId()))
-            .orElseThrow(() -> new RuntimeException("Employee not found for user: " + username));
     }
 }

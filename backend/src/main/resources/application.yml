@@ -2,19 +2,19 @@ spring:
   application:
     name: grading-system
   datasource:
-    url: jdbc:postgresql://postgres:5432/grading_db
-    username: postgres
-    password: postgres
+    url: ${DATABASE_URL:jdbc:postgresql://postgres:5432/grading_db}
+    username: ${DATABASE_USERNAME:postgres}
+    password: ${DATABASE_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: update
-    show-sql: true
+      ddl-auto: ${HIBERNATE_DDL_AUTO:update}
+    show-sql: ${SHOW_SQL:false}
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         default_schema: grading2
-        format_sql: true
+        format_sql: ${FORMAT_SQL:false}
   sql:
     init:
       mode: never
@@ -24,16 +24,16 @@ spring:
       max-request-size: 10MB
 
 server:
-  port: 8080
+  port: ${SERVER_PORT:8080}
   servlet:
     context-path: /api
 
 jwt:
-  secret: your-secret-key-change-this-in-production-minimum-256-bits
-  expiration: 86400000
+  secret: ${JWT_SECRET:your-secret-key-change-this-in-production-minimum-256-bits}
+  expiration: ${JWT_EXPIRATION:86400000}
 
 file:
-  upload-dir: ./uploads
+  upload-dir: ${FILE_UPLOAD_DIR:./uploads}
 
 springdoc:
   api-docs:
@@ -45,5 +45,5 @@ springdoc:
 
 logging:
   level:
-    com.grading: DEBUG
-    org.springframework.security: DEBUG
+    com.grading: ${LOG_LEVEL:INFO}
+    org.springframework.security: ${SECURITY_LOG_LEVEL:WARN}
