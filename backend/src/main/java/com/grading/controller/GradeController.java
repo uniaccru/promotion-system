@@ -3,6 +3,7 @@ package com.grading.controller;
 import com.grading.dto.response.ApiResponse;
 import com.grading.dto.response.GradeResponse;
 import com.grading.entity.Grade;
+import com.grading.exception.ResourceNotFoundException;
 import com.grading.repository.GradeRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -41,7 +42,7 @@ public class GradeController {
     )
     public ResponseEntity<ApiResponse<GradeResponse>> getGradeById(@PathVariable Long id) {
         Grade grade = gradeRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Grade not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Grade", id));
         return ResponseEntity.ok(ApiResponse.success(toGradeResponse(grade)));
     }
 

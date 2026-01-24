@@ -4,6 +4,7 @@ import com.grading.dto.request.ManagerEvaluationRequest;
 import com.grading.dto.response.ReviewResponse;
 import com.grading.entity.Employee;
 import com.grading.entity.ManagerEvaluation;
+import com.grading.exception.ResourceNotFoundException;
 import com.grading.repository.EmployeeRepository;
 import com.grading.repository.ManagerEvaluationRepository;
 import com.grading.service.ManagerEvaluationService;
@@ -24,9 +25,9 @@ public class ManagerEvaluationServiceImpl implements ManagerEvaluationService {
     @Transactional
     public ReviewResponse createEvaluation(ManagerEvaluationRequest request, Long evaluatorId) {
         Employee evaluator = employeeRepository.findById(evaluatorId)
-            .orElseThrow(() -> new RuntimeException("Evaluator not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Employee", evaluatorId));
         Employee employee = employeeRepository.findById(request.getEmployeeId())
-            .orElseThrow(() -> new RuntimeException("Employee not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Employee", request.getEmployeeId()));
 
         ManagerEvaluation evaluation = new ManagerEvaluation();
         evaluation.setEvaluator(evaluator);
@@ -58,7 +59,7 @@ public class ManagerEvaluationServiceImpl implements ManagerEvaluationService {
     @Override
     public ReviewResponse getEvaluationById(Long id) {
         ManagerEvaluation evaluation = managerEvaluationRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Evaluation not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Evaluation", id));
         return toReviewResponse(evaluation);
     }
 

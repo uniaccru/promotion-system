@@ -3,9 +3,13 @@ package com.grading.service.impl;
 import com.grading.dto.request.CreateComparisonRequest;
 import com.grading.dto.response.ComparisonResponse;
 import com.grading.entity.*;
+import com.grading.exception.BusinessLogicException;
+import com.grading.exception.ResourceNotFoundException;
 import com.grading.repository.*;
 import com.grading.service.ComparisonService;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +21,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class ComparisonServiceImpl implements ComparisonService {
+    private static final Logger logger = LoggerFactory.getLogger(ComparisonServiceImpl.class);
     private final ComparisonRepository comparisonRepository;
     private final CalibrationRepository calibrationRepository;
     private final EmployeeRepository employeeRepository;
@@ -57,7 +62,7 @@ public class ComparisonServiceImpl implements ComparisonService {
             });
 
         if (alreadyExists) {
-            throw new RuntimeException("You have already compared these candidates");
+            throw new BusinessLogicException("You have already compared these candidates");
         }
 
         Comparison comparison = new Comparison();
@@ -87,7 +92,7 @@ public class ComparisonServiceImpl implements ComparisonService {
         List<PromotionRequest> promotionRequests = promotionRequestRepository.findByCalibrationIdWithEmployee(calibrationId);
         
         if (promotionRequests.isEmpty()) {
-            System.out.println("No promotion requests found for calibration " + calibrationId);
+            logger.debug("No promotion requests found for calibration {}", calibrationId);
             return new ArrayList<>();
         }
 
@@ -98,7 +103,7 @@ public class ComparisonServiceImpl implements ComparisonService {
             .collect(Collectors.toList());
         
         if (candidates.isEmpty()) {
-            System.out.println("No candidates found for calibration " + calibrationId);
+            logger.debug("No candidates found for calibration {}", calibrationId);
             return new ArrayList<>();
         }
 

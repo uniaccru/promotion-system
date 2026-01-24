@@ -6,8 +6,7 @@ import com.grading.dto.response.CalibrationResponse;
 import com.grading.dto.response.CandidateRankingResponse;
 import com.grading.entity.Calibration;
 import com.grading.entity.Employee;
-import com.grading.repository.EmployeeRepository;
-import com.grading.repository.UserRepository;
+import com.grading.util.SecurityUtils;
 import com.grading.service.CalibrationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -27,8 +26,7 @@ import java.util.List;
 @Tag(name = "Calibration", description = "Управление калибровкой и попарным сравнением кандидатов")
 public class CalibrationController {
     private final CalibrationService calibrationService;
-    private final EmployeeRepository employeeRepository;
-    private final UserRepository userRepository;
+    private final SecurityUtils securityUtils;
 
     @PostMapping
     @Operation(
@@ -144,11 +142,6 @@ public class CalibrationController {
     }
 
     private Employee getCurrentEmployee(Authentication authentication) {
-        String username = authentication.getName();
-        return employeeRepository.findByUserId(
-            userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"))
-                .getId()
-        ).orElseThrow(() -> new RuntimeException("Employee not found"));
+        return securityUtils.getCurrentEmployee(authentication);
     }
 }

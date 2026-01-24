@@ -26,10 +26,21 @@ services:
     container_name: grading-backend
     ports:
       - "8080:8080"
+    env_file:
+      - .env
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/grading_db
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: postgres
+      DATABASE_URL: ${DATABASE_URL:-jdbc:postgresql://postgres:5432/grading_db}
+      DATABASE_USERNAME: ${DATABASE_USERNAME:-postgres}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:-postgres}
+      JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-this-in-production-minimum-256-bits}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
+      SERVER_PORT: ${SERVER_PORT:-8080}
+      FILE_UPLOAD_DIR: ${FILE_UPLOAD_DIR:-./uploads}
+      HIBERNATE_DDL_AUTO: ${HIBERNATE_DDL_AUTO:-update}
+      SHOW_SQL: ${SHOW_SQL:-false}
+      FORMAT_SQL: ${FORMAT_SQL:-false}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      SECURITY_LOG_LEVEL: ${SECURITY_LOG_LEVEL:-WARN}
     depends_on:
       postgres:
         condition: service_healthy

@@ -5,8 +5,7 @@ import com.grading.dto.request.UpdateGoalStatusRequest;
 import com.grading.dto.response.ApiResponse;
 import com.grading.dto.response.GoalResponse;
 import com.grading.entity.Employee;
-import com.grading.repository.EmployeeRepository;
-import com.grading.repository.UserRepository;
+import com.grading.util.SecurityUtils;
 import com.grading.service.GoalService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -27,8 +26,7 @@ import java.util.List;
 @Tag(name = "Goals", description = "Управление назначенными целями сотрудников")
 public class GoalController {
     private final GoalService goalService;
-    private final EmployeeRepository employeeRepository;
-    private final UserRepository userRepository;
+    private final SecurityUtils securityUtils;
 
     @PostMapping("/assign")
     @Operation(
@@ -158,11 +156,6 @@ public class GoalController {
     }
 
     private Employee getCurrentEmployee(Authentication authentication) {
-        String username = authentication.getName();
-        return employeeRepository.findByUserId(
-            userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"))
-                .getId()
-        ).orElseThrow(() -> new RuntimeException("Employee not found"));
+        return securityUtils.getCurrentEmployee(authentication);
     }
 }

@@ -4,8 +4,7 @@ import com.grading.dto.request.ManagerEvaluationRequest;
 import com.grading.dto.response.ApiResponse;
 import com.grading.dto.response.ReviewResponse;
 import com.grading.entity.Employee;
-import com.grading.repository.EmployeeRepository;
-import com.grading.repository.UserRepository;
+import com.grading.util.SecurityUtils;
 import com.grading.service.ManagerEvaluationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -27,8 +26,7 @@ import java.util.List;
 @Tag(name = "Manager Evaluations", description = "Управление оценками менеджера")
 public class ManagerEvaluationController {
     private final ManagerEvaluationService managerEvaluationService;
-    private final EmployeeRepository employeeRepository;
-    private final UserRepository userRepository;
+    private final SecurityUtils securityUtils;
 
     @PostMapping
     @Operation(
@@ -147,11 +145,6 @@ public class ManagerEvaluationController {
     }
 
     private Employee getCurrentEmployee(Authentication authentication) {
-        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-        String username = userDetails.getUsername();
-        
-        return userRepository.findByUsername(username)
-            .flatMap(user -> employeeRepository.findByUserId(user.getId()))
-            .orElseThrow(() -> new RuntimeException("Employee not found for user: " + username));
+        return securityUtils.getCurrentEmployee(authentication);
     }
 }

@@ -4,8 +4,7 @@ import com.grading.dto.request.CreateComparisonRequest;
 import com.grading.dto.response.ApiResponse;
 import com.grading.dto.response.ComparisonResponse;
 import com.grading.entity.Employee;
-import com.grading.repository.EmployeeRepository;
-import com.grading.repository.UserRepository;
+import com.grading.util.SecurityUtils;
 import com.grading.service.ComparisonService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -25,8 +24,7 @@ import java.util.List;
 @Tag(name = "Comparisons", description = "Управление попарными сравнениями кандидатов")
 public class ComparisonController {
     private final ComparisonService comparisonService;
-    private final EmployeeRepository employeeRepository;
-    private final UserRepository userRepository;
+    private final SecurityUtils securityUtils;
 
     @PostMapping
     @Operation(
@@ -74,12 +72,7 @@ public class ComparisonController {
     }
 
     private Employee getCurrentEmployee(Authentication authentication) {
-        String username = authentication.getName();
-        return employeeRepository.findByUserId(
-            userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"))
-                .getId()
-        ).orElseThrow(() -> new RuntimeException("Employee not found"));
+        return securityUtils.getCurrentEmployee(authentication);
     }
 }
 

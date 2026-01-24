@@ -3,6 +3,7 @@ package com.grading.service.impl;
 import com.grading.dto.request.CreateGoalRequest;
 import com.grading.dto.response.GoalTemplateResponse;
 import com.grading.entity.Goal;
+import com.grading.exception.ResourceNotFoundException;
 import com.grading.repository.GoalRepository;
 import com.grading.service.GoalTemplateService;
 import lombok.RequiredArgsConstructor;
@@ -54,7 +55,7 @@ public class GoalTemplateServiceImpl implements GoalTemplateService {
     @Override
     public GoalTemplateResponse getGoalTemplateById(Long id) {
         Goal goal = goalRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Goal template not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Goal template", id));
         return toGoalTemplateResponse(goal);
     }
 
