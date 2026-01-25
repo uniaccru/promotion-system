@@ -10,13 +10,14 @@ import java.util.List;
 
 @Repository
 public interface ComparisonRepository extends JpaRepository<Comparison, Long> {
-    List<Comparison> findByCalibrationId(Long calibrationId);
+    @Query("SELECT c FROM Comparison c WHERE c.calibration.id = :calibrationId ORDER BY c.decidedAt DESC")
+    List<Comparison> findByCalibrationId(@Param("calibrationId") Long calibrationId);
     
     @Query("SELECT c FROM Comparison c " +
            "LEFT JOIN FETCH c.decidedBy " +
            "LEFT JOIN FETCH c.candidateA " +
            "LEFT JOIN FETCH c.candidateB " +
            "LEFT JOIN FETCH c.winner " +
-           "WHERE c.calibration.id = :calibrationId")
+           "WHERE c.calibration.id = :calibrationId ORDER BY c.decidedAt DESC")
     List<Comparison> findByCalibrationIdWithRelations(@Param("calibrationId") Long calibrationId);
 }

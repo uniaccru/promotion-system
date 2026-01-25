@@ -11,10 +11,19 @@ import java.util.Optional;
 
 @Repository
 public interface ManagerEvaluationRepository extends JpaRepository<ManagerEvaluation, Long> {
-    List<ManagerEvaluation> findByEmployeeId(Long employeeId);
-    List<ManagerEvaluation> findByEvaluatorId(Long evaluatorId);
-    List<ManagerEvaluation> findByReviewPeriod(String reviewPeriod);
+    @Query("SELECT me FROM ManagerEvaluation me WHERE me.employee.id = :employeeId ORDER BY me.createdAt DESC")
+    List<ManagerEvaluation> findByEmployeeId(@Param("employeeId") Long employeeId);
+    
+    @Query("SELECT me FROM ManagerEvaluation me WHERE me.evaluator.id = :evaluatorId ORDER BY me.createdAt DESC")
+    List<ManagerEvaluation> findByEvaluatorId(@Param("evaluatorId") Long evaluatorId);
+    
+    @Query("SELECT me FROM ManagerEvaluation me WHERE me.reviewPeriod = :reviewPeriod ORDER BY me.createdAt DESC")
+    List<ManagerEvaluation> findByReviewPeriod(@Param("reviewPeriod") String reviewPeriod);
     
     @Query("SELECT me FROM ManagerEvaluation me WHERE me.employee.id = :employeeId ORDER BY me.createdAt DESC LIMIT 1")
     Optional<ManagerEvaluation> findLatestByEmployeeId(@Param("employeeId") Long employeeId);
+    
+    @Query("SELECT me FROM ManagerEvaluation me ORDER BY me.createdAt DESC")
+    @Override
+    List<ManagerEvaluation> findAll();
 }
