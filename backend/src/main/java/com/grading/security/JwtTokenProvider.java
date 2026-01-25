@@ -11,6 +11,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
 @Component
@@ -29,7 +30,7 @@ public class JwtTokenProvider {
             logger.error("JWT secret is too short or not set. Minimum length is {} characters", MIN_SECRET_LENGTH);
             throw new ValidationException("JWT secret must be at least " + MIN_SECRET_LENGTH + " characters long");
         }
-        return Keys.hmacShaKeyFor(jwtSecret.getBytes());
+        return Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
     }
 
     public String generateToken(Authentication authentication) {

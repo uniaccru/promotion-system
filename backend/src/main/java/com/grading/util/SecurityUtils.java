@@ -2,6 +2,7 @@ package com.grading.util;
 
 import com.grading.entity.Employee;
 import com.grading.exception.ResourceNotFoundException;
+import com.grading.exception.UnauthorizedException;
 import com.grading.repository.EmployeeRepository;
 import com.grading.repository.UserRepository;
 import org.springframework.security.core.Authentication;
@@ -20,11 +21,11 @@ public class SecurityUtils {
 
     public Employee getCurrentEmployee(Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated()) {
-            throw new ResourceNotFoundException("Authentication required");
+            throw new UnauthorizedException("Authentication required");
         }
 
         if (!(authentication.getPrincipal() instanceof UserDetails)) {
-            throw new ResourceNotFoundException("Invalid authentication principal");
+            throw new UnauthorizedException("Invalid authentication principal");
         }
 
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
@@ -32,6 +33,6 @@ public class SecurityUtils {
         
         return userRepository.findByUsername(username)
             .flatMap(user -> employeeRepository.findByUserId(user.getId()))
-            .orElseThrow(() -> new ResourceNotFoundException("Employee", username));
+            .orElseThrow(() -> new UnauthorizedException("Employee not found for user: " + username));
     }
 }
