@@ -76,3 +76,19 @@ Docker, Docker Compose, Nginx, PostgreSQL
 - `comparisons` - сравнения кандидатов
 - `grade_history` - история изменений грейдов
 
+## Showcases
+
+Основных сценарии системы:
+
+1. **Create and assign goal**  
+   <video src="videos/goals.mov" controls autoplay muted loop playsinline></video>
+
+2. **Create employee review**  
+   <video src="videos/review.mp4" controls autoplay muted loop playsinline></video>
+
+3. **Create promotion request**  
+   <video src="videos/prom request.mp4" controls autoplay muted loop playsinline></video>
+
+4. **Calibration flow**  
+   <video src="videos/calbration final.mp4" controls autoplay muted loop playsinline></video>
+
