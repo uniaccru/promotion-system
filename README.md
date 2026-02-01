@@ -76,19 +76,75 @@ Docker, Docker Compose, Nginx, PostgreSQL
 - `comparisons` - сравнения кандидатов
 - `grade_history` - история изменений грейдов
 
-## Showcases
+## Screenshots
 
-Основных сценарии системы:
+### HR
 
-1. **Create and assign goal**  
-   <video src="videos/goals.mov" controls autoplay muted loop playsinline></video>
+**Профиль сотрудника**
 
-2. **Create employee review**  
-   <video src="videos/review.mp4" controls autoplay muted loop playsinline></video>
+![Профиль сотрудника](screenshots/hr/профиль%20сотрудника.png)
 
-3. **Create promotion request**  
-   <video src="videos/prom request.mp4" controls autoplay muted loop playsinline></video>
+**Создание целей**
 
-4. **Calibration flow**  
-   <video src="videos/calbration final.mp4" controls autoplay muted loop playsinline></video>
+![Создание цели](screenshots/hr/создание%20цели.png)
+
+![Страница целей (HR)](screenshots/hr/страница%20целей%20(hr).png)
+
+**Назначение целей**
+
+![Назначение цели](screenshots/hr/назначение%20цели.png)
+
+![Назначенные цели](screenshots/hr/назначеные%20цели.png)
+
+**Создание ревью**
+
+![Создание ревью](screenshots/hr/создание%20ревью.png)
+
+![Страница ревью (HR)](screenshots/hr/страница%20ревью%20(hr).png)
+
+**Заявки на повышение**
+
+![Страница заявок на повышение](screenshots/hr/страница%20заявок%20на%20повышение.png)
+
+![Окно просмотра заявки](screenshots/hr/окно%20просмотра%20заявки.png)
+
+**Калибровки**
+
+![Страница калибровок](screenshots/hr/страница%20калибровок.png)
+
+![Просмотр результатов калибровки](screenshots/hr/просмотр%20результатов%20калибровки.png)
+
+**Создание пакета калибровки**
+
+![Создание пакета калибровки](screenshots/hr/создание%20пакета%20калиброки.png)
+
+**Менеджмент сотрудников**
+
+![Страница управления сотрудниками](screenshots/hr/страница%20employee%20managment.png)
+
+### Сотрудник
+
+**Управление целями**
+
+![Страница целей (сотрудник)](screenshots/employee/страница%20целей%20(сотрудник).png)
+
+**Просмотр ревью**
+
+![Страница ревью (сотрудник)](screenshots/employee/страница%20ревью%20(сотрудник).png)
+
+**Заявки на повышение**
+
+![Страница заявок на повышение (сотрудник)](screenshots/employee/страница%20заявок%20на%20повышение%20(сотрудник).png)
+
+**Создание заявки на повышение**
+
+![Создание заявки на повышение](screenshots/employee/создание%20заявки%20на%20повышение.png)
+
+### Тимлид
+
+**Калибровка**
+
+![Страница калибровок (TL)](screenshots/tl/страница%20калибровок.png)
+
+![Калибровка: попарное сравнение](screenshots/tl/калибровка%20попарное%20сравнение.png)
 
